@@ -447,6 +447,13 @@ pytest tests/test_stock.py -v
 pytest tests/test_stock.py::test_stock_overview -v
 ```
 
+Run the deterministic end-to-end testbed:
+
+```bash
+python -m testbed.seed.reset_demo_env
+python -m testbed.runners.run_suite pr
+```
+
 ## Troubleshooting
 
 **"Grocy URL not configured"**
@@ -483,6 +490,8 @@ Claude Desktop logs for error details.
 - [Contributing](./CONTRIBUTING.md)
 - [Design and implementation notes](./docs/specs/)
 - [Workflow design](./docs/specs/2026-04-01-grocy-mcp-workflow-design.md)
+- [Testbed guide](./testbed/README.md)
+- [Testbed design](./docs/specs/2026-04-01-grocy-mcp-testbed-design.md)
 
 ## Contributing
 

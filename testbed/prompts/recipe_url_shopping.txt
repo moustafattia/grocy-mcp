@@ -1,0 +1,6 @@
+Read the provided recipe snapshot and return only a JSON array of ingredients.
+Use this schema for each item:
+{"label":"string","quantity":number,"unit_text":"string|null","barcode":"string|null","note":"string|null"}
+Return ingredient names and quantities only.
+Do not invent Grocy product IDs.
+

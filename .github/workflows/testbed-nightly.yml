@@ -1,14 +1,12 @@
-name: Release to PyPI
+name: Testbed Nightly
 
 on:
-  release:
-    types: [published]
-
-permissions:
-  id-token: write
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
 
 jobs:
-  testbed_release:
+  nightly:
     runs-on: ubuntu-latest
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -24,17 +22,4 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -e ".[dev]"
-      - run: python -m testbed.runners.run_suite release
-
-  publish:
-    runs-on: ubuntu-latest
-    needs: testbed_release
-    environment: pypi
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install build
-      - run: python -m build
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - run: python -m testbed.runners.run_suite nightly

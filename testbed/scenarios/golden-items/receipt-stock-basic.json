@@ -1,0 +1,8 @@
+[
+  {"label": "whole milk", "quantity": 2, "unit_text": "cartons", "barcode": "5000112637922"},
+  {"label": "bananas", "quantity": 6, "unit_text": "pieces"},
+  {"label": "oat milk", "quantity": 1, "unit_text": "cartons", "barcode": "5000112637000"},
+  {"label": "butter", "quantity": 1, "unit_text": "packs", "barcode": "5000112637017"},
+  {"label": "pasta", "quantity": 2, "unit_text": "packs", "barcode": "5000112637024"}
+]
+

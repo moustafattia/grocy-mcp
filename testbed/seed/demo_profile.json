@@ -1,0 +1,86 @@
+{
+  "quantity_units": [
+    {"name": "piece", "description": "Countable items"},
+    {"name": "carton", "description": "Cartons and boxes"},
+    {"name": "pack", "description": "Packs"},
+    {"name": "loaf", "description": "Loaves"},
+    {"name": "bottle", "description": "Bottles"},
+    {"name": "gram", "description": "Grams"}
+  ],
+  "locations": [
+    {"name": "Fridge", "description": "Cold storage"},
+    {"name": "Pantry", "description": "Dry goods"},
+    {"name": "Freezer", "description": "Frozen storage", "is_freezer": 1}
+  ],
+  "shopping_lists": [
+    {"name": "Weekly", "description": "Main weekly grocery list"},
+    {"name": "Party", "description": "Secondary scenario list"}
+  ],
+  "shopping_locations": [
+    {"name": "Local Supermarket", "description": "Default grocery store"},
+    {"name": "Farmers Market", "description": "Fresh produce"}
+  ],
+  "task_categories": [
+    {"name": "Groceries", "description": "Shopping and pantry upkeep"},
+    {"name": "Kitchen", "description": "Kitchen routines"}
+  ],
+  "meal_plan_sections": [
+    {"name": "Breakfast", "sort_number": 10},
+    {"name": "Dinner", "sort_number": 20}
+  ],
+  "products": [
+    {"name": "Whole Milk", "description": "Fresh milk", "location": "Fridge", "purchase_unit": "carton", "stock_unit": "carton", "stock_amount": 0, "barcodes": ["5000112637922"], "shopping_location": "Local Supermarket"},
+    {"name": "Oat Milk", "description": "Plant milk", "location": "Fridge", "purchase_unit": "carton", "stock_unit": "carton", "stock_amount": 0, "barcodes": ["5000112637000"], "shopping_location": "Local Supermarket"},
+    {"name": "Bananas", "description": "Fresh bananas", "location": "Pantry", "purchase_unit": "piece", "stock_unit": "piece", "stock_amount": 0, "barcodes": ["2000000001111"], "shopping_location": "Farmers Market"},
+    {"name": "Butter", "description": "Salted butter", "location": "Fridge", "purchase_unit": "pack", "stock_unit": "pack", "stock_amount": 0, "barcodes": ["5000112637017"], "shopping_location": "Local Supermarket"},
+    {"name": "Pasta", "description": "Dry pasta", "location": "Pantry", "purchase_unit": "pack", "stock_unit": "pack", "stock_amount": 0, "barcodes": ["5000112637024"], "shopping_location": "Local Supermarket"},
+    {"name": "Rice", "description": "Long-grain rice", "location": "Pantry", "purchase_unit": "pack", "stock_unit": "pack", "stock_amount": 2, "barcodes": ["5000112637031"], "shopping_location": "Local Supermarket"},
+    {"name": "Eggs", "description": "Eggs", "location": "Fridge", "purchase_unit": "piece", "stock_unit": "piece", "stock_amount": 6, "barcodes": ["5000112637048"], "shopping_location": "Local Supermarket"},
+    {"name": "Bread", "description": "Sandwich loaf", "location": "Pantry", "purchase_unit": "loaf", "stock_unit": "loaf", "stock_amount": 1, "barcodes": ["5000112637055"], "shopping_location": "Local Supermarket"},
+    {"name": "Tomatoes", "description": "Fresh tomatoes", "location": "Fridge", "purchase_unit": "piece", "stock_unit": "piece", "stock_amount": 4, "barcodes": ["2000000002222"], "shopping_location": "Farmers Market"},
+    {"name": "Tomato Sauce", "description": "Jarred tomato sauce", "location": "Pantry", "purchase_unit": "bottle", "stock_unit": "bottle", "stock_amount": 2, "barcodes": ["5000112637062"], "shopping_location": "Local Supermarket"},
+    {"name": "Onions", "description": "Brown onions", "location": "Pantry", "purchase_unit": "piece", "stock_unit": "piece", "stock_amount": 3},
+    {"name": "Garlic", "description": "Garlic bulbs", "location": "Pantry", "purchase_unit": "piece", "stock_unit": "piece", "stock_amount": 2},
+    {"name": "Olive Oil", "description": "Olive oil", "location": "Pantry", "purchase_unit": "bottle", "stock_unit": "bottle", "stock_amount": 1, "barcodes": ["5000112637079"], "shopping_location": "Local Supermarket"},
+    {"name": "Flour", "description": "All-purpose flour", "location": "Pantry", "purchase_unit": "gram", "stock_unit": "gram", "stock_amount": 500, "barcodes": ["5000112637086"], "shopping_location": "Local Supermarket"},
+    {"name": "Sugar", "description": "White sugar", "location": "Pantry", "purchase_unit": "gram", "stock_unit": "gram", "stock_amount": 400},
+    {"name": "Yogurt", "description": "Plain yogurt", "location": "Fridge", "purchase_unit": "piece", "stock_unit": "piece", "stock_amount": 2},
+    {"name": "Apples", "description": "Apples", "location": "Pantry", "purchase_unit": "piece", "stock_unit": "piece", "stock_amount": 5},
+    {"name": "Chicken Breast", "description": "Frozen chicken", "location": "Freezer", "purchase_unit": "pack", "stock_unit": "pack", "stock_amount": 1},
+    {"name": "Cheese", "description": "Cheddar cheese", "location": "Fridge", "purchase_unit": "pack", "stock_unit": "pack", "stock_amount": 1},
+    {"name": "Cereal", "description": "Breakfast cereal", "location": "Pantry", "purchase_unit": "carton", "stock_unit": "carton", "stock_amount": 1}
+  ],
+  "shopping_items": [
+    {"list": "Weekly", "product": "Whole Milk", "amount": 2},
+    {"list": "Weekly", "product": "Bananas", "amount": 6},
+    {"list": "Weekly", "product": "Oat Milk", "amount": 1},
+    {"list": "Weekly", "product": "Butter", "amount": 1},
+    {"list": "Weekly", "product": "Pasta", "amount": 2},
+    {"list": "Weekly", "product": "Bread", "amount": 1}
+  ],
+  "recipes": [
+    {"name": "Pasta Pomodoro", "description": "Simple tomato pasta", "ingredients": [{"product": "Pasta", "amount": 1}, {"product": "Tomato Sauce", "amount": 1}, {"product": "Olive Oil", "amount": 1}, {"product": "Garlic", "amount": 1}]},
+    {"name": "Fluffy Pancakes", "description": "Weekend breakfast", "ingredients": [{"product": "Flour", "amount": 300}, {"product": "Eggs", "amount": 2}, {"product": "Whole Milk", "amount": 1}, {"product": "Butter", "amount": 1}]},
+    {"name": "Grilled Cheese", "description": "Quick lunch", "ingredients": [{"product": "Bread", "amount": 2}, {"product": "Cheese", "amount": 1}, {"product": "Butter", "amount": 1}]},
+    {"name": "Banana Smoothie", "description": "Breakfast drink", "ingredients": [{"product": "Bananas", "amount": 2}, {"product": "Yogurt", "amount": 1}, {"product": "Whole Milk", "amount": 1}]},
+    {"name": "Tomato Omelette", "description": "Easy dinner", "ingredients": [{"product": "Eggs", "amount": 3}, {"product": "Tomatoes", "amount": 2}, {"product": "Onions", "amount": 1}]}
+  ],
+  "tasks": [
+    {"name": "Check pantry stock", "description": "Review pantry staples", "category": "Groceries"},
+    {"name": "Wipe fridge shelves", "description": "Kitchen maintenance", "category": "Kitchen"}
+  ],
+  "chores": [
+    {"name": "Take out recycling", "description": "Weekly recycling", "period_type": "weekly", "period_days": 7}
+  ],
+  "batteries": [
+    {"name": "Kitchen Scale Battery", "description": "AAA cell"}
+  ],
+  "equipment": [
+    {"name": "Kitchen Scale", "description": "Digital kitchen scale", "battery": "Kitchen Scale Battery", "location": "Pantry"}
+  ],
+  "meal_plan": [
+    {"day": "2026-04-03", "recipe": "Fluffy Pancakes", "type": "recipe", "section": "Breakfast"},
+    {"day": "2026-04-03", "recipe": "Pasta Pomodoro", "type": "recipe", "section": "Dinner"}
+  ]
+}
+

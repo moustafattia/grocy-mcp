@@ -1,0 +1,23 @@
+{
+  "stock": [
+    {"product": "Whole Milk", "amount": 1},
+    {"product": "Oat Milk", "amount": 1}
+  ],
+  "shopping_lists": [
+    {
+      "list_name": "Weekly",
+      "items": [
+        {"product": "Bananas", "amount": 6},
+        {"product": "Butter", "amount": 1},
+        {"product": "Pasta", "amount": 2},
+        {"product": "Bread", "amount": 1}
+      ],
+      "absent": ["Whole Milk", "Oat Milk"]
+    }
+  ],
+  "mutations": {
+    "stock_changed": true,
+    "shopping_changed": true
+  }
+}
+
