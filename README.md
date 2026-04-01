@@ -1,5 +1,10 @@
 # grocy-mcp
 
+[![PyPI](https://img.shields.io/pypi/v/grocy-mcp)](https://pypi.org/project/grocy-mcp/)
+[![Python](https://img.shields.io/pypi/pyversions/grocy-mcp)](https://pypi.org/project/grocy-mcp/)
+[![CI](https://github.com/moustafattia/grocy-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/moustafattia/grocy-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/moustafattia/grocy-mcp/blob/main/LICENSE)
+
 Python MCP server and CLI for [Grocy](https://grocy.info/).
 
 `grocy-mcp` lets AI agents and terminal users work with Grocy through one shared codebase. It exposes stock, shopping lists, recipes, chores, and generic entity management through:
@@ -256,32 +261,45 @@ pytest tests/test_stock.py -v
 pytest tests/test_stock.py::test_stock_overview -v
 ```
 
+## Troubleshooting
+
+**"Grocy URL not configured"**
+Set `GROCY_URL` via environment variable, config file, or `--url` flag. The URL
+should be the base URL of your Grocy instance (e.g. `https://grocy.example.com`),
+not the API endpoint.
+
+**"Auth failed (401)"**
+Your API key is invalid or expired. Generate a new one in Grocy under
+Settings → Manage API keys. Pass it via `GROCY_API_KEY`, config file, or `--api-key`.
+
+**"Connection failed" or timeouts**
+Check that the Grocy URL is reachable from the machine running grocy-mcp. Common
+causes: wrong port, firewall rules, Grocy behind a reverse proxy without proper
+forwarding.
+
+**"No products found matching '...'"**
+The name resolver uses case-insensitive substring matching. Check `grocy stock search`
+to see available product names. You can also pass numeric IDs directly.
+
+**"Multiple products match '...'"**
+Be more specific with the name, or use the numeric ID shown in the error message.
+
+**MCP server not connecting in Claude Desktop**
+Make sure the `command` in your MCP config points to the `grocy-mcp` executable
+and that `GROCY_URL` and `GROCY_API_KEY` are set in the `env` block. Check
+Claude Desktop logs for error details.
+
 ## Documentation
 
+- [Changelog](./CHANGELOG.md)
 - [Roadmap](./ROADMAP.md)
+- [Contributing](./CONTRIBUTING.md)
 - [Design and implementation notes](./docs/specs/)
-
-## Roadmap highlights
-
-The next high-value work is tracked in [ROADMAP.md](./ROADMAP.md). The short version:
-
-- close remaining UX gaps between the CLI surface and the underlying implementation
-- expand tool coverage deeper into Grocy features
-- improve MCP ergonomics for AI agents
-- strengthen test coverage for argument-heavy and integration-heavy flows
-- tighten release, packaging, and contributor onboarding
 
 ## Contributing
 
-Issues, bug reports, docs improvements, and feature proposals are welcome.
-
-Good contribution areas:
-
-- new Grocy domain coverage
-- CLI usability improvements
-- MCP schema/tool ergonomics
-- documentation and examples
-- tests around edge cases and Grocy API quirks
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup instructions, code style, and
+guidelines.
 
 ## License
 
