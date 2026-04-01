@@ -74,3 +74,36 @@ async def test_chore_create(mock_client):
     mock_client.create_object.assert_called_once_with("chores", {"name": "Water plants"})
     assert "Water plants" in result
     assert "5" in result
+
+
+async def test_chore_execute_without_done_by(mock_client):
+    with patch("grocy_mcp.core.chores.resolve_chore", return_value=1):
+        result = await chore_execute(mock_client, "Vacuum")
+        mock_client.execute_chore.assert_called_once_with(1, None)
+        assert "'Vacuum'" in result
+
+
+async def test_chore_undo_no_executions(mock_client):
+    mock_client.get_chore_executions.return_value = []
+    with patch("grocy_mcp.core.chores.resolve_chore", return_value=1):
+        result = await chore_undo(mock_client, "Vacuum")
+        assert "No executions found" in result
+        assert "'Vacuum'" in result
+
+
+async def test_chores_list_empty(mock_client):
+    mock_client.get_chores.return_value = []
+    result = await chores_list(mock_client)
+    assert result == "No chores found."
+
+
+async def test_chores_overdue_none(mock_client):
+    mock_client.get_chores.return_value = [
+        {
+            "chore_id": 2,
+            "chore": {"id": 2, "name": "Future chore"},
+            "next_estimated_execution_time": "2099-01-01 10:00:00",
+        },
+    ]
+    result = await chores_overdue(mock_client)
+    assert result == "No overdue chores."

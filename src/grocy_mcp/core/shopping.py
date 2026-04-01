@@ -16,7 +16,7 @@ async def shopping_list_view(client: GrocyClient, list_id: int = 1) -> str:
     """Return a formatted view of the shopping list."""
     items = await client.get_shopping_list(list_id)
     if not items:
-        return "Shopping list is empty."
+        return "No shopping list items found."
 
     name_map = await _product_name_map(client)
 
@@ -26,7 +26,7 @@ async def shopping_list_view(client: GrocyClient, list_id: int = 1) -> str:
         name = name_map.get(product_id, f"Product {product_id}")
         amount = item.get("amount", 1)
         note = item.get("note")
-        line = f"  [{item['id']}] {name}: {amount}"
+        line = f"  [{item['id']}] {name} — {amount}"
         if note:
             line += f" ({note})"
         lines.append(line)
@@ -47,12 +47,22 @@ async def shopping_list_add(
     return f"Added {amount} of '{product}' to shopping list (item ID {item_id})."
 
 
-async def shopping_list_update(
-    client: GrocyClient, item_id: int, data: dict
-) -> str:
+async def shopping_list_update(client: GrocyClient, item_id: int, data: dict) -> str:
     """Update a shopping list item by its ID."""
     await client.update_shopping_list_item(item_id, data)
     return f"Shopping list item {item_id} updated."
+
+
+async def shopping_list_set_amount(client: GrocyClient, item_id: int, amount: float) -> str:
+    """Set the amount for a shopping list item."""
+    await client.update_shopping_list_item(item_id, {"amount": amount})
+    return f"Shopping list item {item_id} amount set to {amount}."
+
+
+async def shopping_list_set_note(client: GrocyClient, item_id: int, note: str) -> str:
+    """Set or update the note for a shopping list item."""
+    await client.update_shopping_list_item(item_id, {"note": note})
+    return f"Shopping list item {item_id} note set to '{note}'."
 
 
 async def shopping_list_remove(client: GrocyClient, item_id: int) -> str:

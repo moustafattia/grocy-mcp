@@ -9,7 +9,11 @@ async def system_info(client: GrocyClient) -> str:
     """Return Grocy system information."""
     info = await client.get_system_info()
     grocy_version = info.get("grocy_version", {})
-    version = grocy_version.get("Version", "unknown") if isinstance(grocy_version, dict) else str(grocy_version)
+    version = (
+        grocy_version.get("Version", "unknown")
+        if isinstance(grocy_version, dict)
+        else str(grocy_version)
+    )
     php_version = info.get("php_version", "unknown")
     sqlite_version = info.get("sqlite_version", "unknown")
 
@@ -25,7 +29,7 @@ async def entity_list(client: GrocyClient, entity: str) -> str:
     """List all objects of a given entity type."""
     items = await client.get_objects(entity)
     if not items:
-        return f"No {entity} found (empty)."
+        return f"No {entity} found."
 
     lines = [f"{entity} ({len(items)} item(s)):"]
     for item in items:

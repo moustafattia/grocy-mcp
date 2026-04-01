@@ -18,17 +18,13 @@ async def resolve_entity(
     items = await client.get_objects(entity)
     query_lower = name_or_id.lower()
 
-    matches = [
-        item for item in items
-        if query_lower in item.get(name_field, "").lower()
-    ]
+    matches = [item for item in items if query_lower in item.get(name_field, "").lower()]
 
     if not matches:
         all_names = [item.get(name_field, "?") for item in items[:10]]
         suggestion = ", ".join(all_names)
         raise GrocyResolveError(
-            f"No {entity} found matching '{name_or_id}'. "
-            f"Available: {suggestion}"
+            f"No {entity} found matching '{name_or_id}'. Available: {suggestion}"
         )
 
     if len(matches) == 1:
@@ -40,8 +36,7 @@ async def resolve_entity(
 
     names = [f"{m.get(name_field)} (ID {m['id']})" for m in matches]
     raise GrocyResolveError(
-        f"Multiple {entity} match '{name_or_id}': {', '.join(names)}. "
-        f"Please be more specific."
+        f"Multiple {entity} match '{name_or_id}': {', '.join(names)}. Please be more specific."
     )
 
 

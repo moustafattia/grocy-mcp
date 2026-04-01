@@ -10,13 +10,13 @@ async def stock_overview(client: GrocyClient) -> str:
     """Return a formatted overview of current stock."""
     items = await client.get_stock()
     if not items:
-        return "Stock is empty."
+        return "No stock found."
     lines = ["Current stock:"]
     for item in items:
         product = item.get("product") or {}
         name = product.get("name", f"Product {item.get('product_id')}")
         amount = item.get("amount", 0)
-        lines.append(f"  {name}: {amount}")
+        lines.append(f"  [{item.get('product_id', '?')}] {name} — {amount}")
     return "\n".join(lines)
 
 
@@ -51,7 +51,7 @@ async def stock_expiring(client: GrocyClient) -> str:
             lines.append(f"  {name}")
 
     if not lines:
-        return "No expiring, expired, or missing products."
+        return "No expiring, expired, or missing products found."
 
     return "\n".join(lines)
 
@@ -66,49 +66,43 @@ async def stock_product_info(client: GrocyClient, product: str) -> str:
     amount = info.get("stock_amount", 0)
     best_before = info.get("next_best_before_date", "unknown")
 
-    return (
-        f"Product: {name}\n"
-        f"  In stock: {amount}\n"
-        f"  Next best before: {best_before}"
-    )
+    return f"Product: {name}\n  In stock: {amount}\n  Next best before: {best_before}"
 
 
 async def stock_add(client: GrocyClient, product: str, amount: float, **kwargs) -> str:
     """Add stock for a product."""
     product_id = await resolve_product(client, product)
     await client.add_stock(product_id, amount, **kwargs)
-    return f"Added {amount} of {product} to stock."
+    return f"Added {amount} of '{product}' to stock."
 
 
 async def stock_consume(client: GrocyClient, product: str, amount: float, **kwargs) -> str:
     """Consume stock for a product."""
     product_id = await resolve_product(client, product)
     await client.consume_stock(product_id, amount, **kwargs)
-    return f"Consumed {amount} of {product} from stock."
+    return f"Consumed {amount} of '{product}' from stock."
 
 
-async def stock_transfer(
-    client: GrocyClient, product: str, amount: float, to_location: str
-) -> str:
+async def stock_transfer(client: GrocyClient, product: str, amount: float, to_location: str) -> str:
     """Transfer stock to a different location."""
     product_id = await resolve_product(client, product)
     location_id = await resolve_location(client, to_location)
     await client.transfer_stock(product_id, amount, location_id)
-    return f"Transferred {amount} of {product} to location '{to_location}'."
+    return f"Transferred {amount} of '{product}' to location '{to_location}'."
 
 
 async def stock_inventory(client: GrocyClient, product: str, new_amount: float) -> str:
     """Set the stock amount for a product via inventory."""
     product_id = await resolve_product(client, product)
     await client.inventory_stock(product_id, new_amount)
-    return f"Inventory updated: {product} set to {new_amount}."
+    return f"Inventory updated: '{product}' set to {new_amount}."
 
 
 async def stock_open(client: GrocyClient, product: str, amount: float = 1.0) -> str:
     """Mark stock as opened for a product."""
     product_id = await resolve_product(client, product)
     await client.open_stock(product_id, amount)
-    return f"Opened {amount} of {product}."
+    return f"Opened {amount} of '{product}'."
 
 
 async def stock_search(client: GrocyClient, query: str) -> str:
@@ -128,7 +122,7 @@ async def stock_search(client: GrocyClient, query: str) -> str:
 
     lines = [f"Products matching '{query}':"]
     for p in matches:
-        lines.append(f"  {p.get('name', '?')} (ID {p['id']})")
+        lines.append(f"  [{p['id']}] {p.get('name', '?')}")
     return "\n".join(lines)
 
 

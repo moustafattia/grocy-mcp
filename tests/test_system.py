@@ -64,3 +64,21 @@ async def test_entity_manage_delete(mock_client):
 async def test_entity_manage_unknown_action(mock_client):
     result = await entity_manage(mock_client, "products", "explode")
     assert "unknown" in result.lower() or "invalid" in result.lower()
+
+
+async def test_entity_manage_update_missing_obj_id(mock_client):
+    result = await entity_manage(mock_client, "products", "update", data={"name": "X"})
+    assert "requires" in result.lower()
+    mock_client.update_object.assert_not_called()
+
+
+async def test_entity_manage_delete_missing_obj_id(mock_client):
+    result = await entity_manage(mock_client, "products", "delete")
+    assert "requires" in result.lower()
+    mock_client.delete_object.assert_not_called()
+
+
+async def test_entity_manage_create_empty_data(mock_client):
+    result = await entity_manage(mock_client, "products", "create")
+    mock_client.create_object.assert_called_once_with("products", {})
+    assert "42" in result

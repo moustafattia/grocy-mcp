@@ -9,6 +9,8 @@ from grocy_mcp.core.shopping import (
     shopping_list_add_missing,
     shopping_list_clear,
     shopping_list_remove,
+    shopping_list_set_amount,
+    shopping_list_set_note,
     shopping_list_update,
     shopping_list_view,
 )
@@ -69,3 +71,60 @@ async def test_shopping_list_add_missing(mock_client):
     result = await shopping_list_add_missing(mock_client)
     mock_client.add_missing_products_to_shopping_list.assert_called_once()
     assert result
+
+
+async def test_shopping_list_view_empty(mock_client):
+    mock_client.get_shopping_list.return_value = []
+    result = await shopping_list_view(mock_client)
+    assert result == "No shopping list items found."
+
+
+async def test_shopping_list_view_with_list_id(mock_client):
+    result = await shopping_list_view(mock_client, list_id=5)
+    mock_client.get_shopping_list.assert_called_once_with(5)
+    assert "Shopping list #5:" in result
+
+
+async def test_shopping_list_view_shows_note(mock_client):
+    result = await shopping_list_view(mock_client)
+    assert "(fresh)" in result
+
+
+async def test_shopping_list_view_format(mock_client):
+    result = await shopping_list_view(mock_client)
+    # Uses em-dash separator
+    assert "[1] Milk" in result
+    assert "—" in result
+
+
+async def test_shopping_list_add_default_params(mock_client):
+    with patch("grocy_mcp.core.shopping.resolve_product", return_value=1):
+        result = await shopping_list_add(mock_client, "Milk")
+        mock_client.add_shopping_list_item.assert_called_once_with(1, 1.0, 1, None)
+        assert "'Milk'" in result
+
+
+async def test_shopping_list_clear_with_list_id(mock_client):
+    result = await shopping_list_clear(mock_client, list_id=3)
+    mock_client.clear_shopping_list.assert_called_once_with(3)
+    assert "#3" in result
+
+
+async def test_shopping_list_add_missing_with_list_id(mock_client):
+    result = await shopping_list_add_missing(mock_client, list_id=2)
+    mock_client.add_missing_products_to_shopping_list.assert_called_once_with(2)
+    assert "#2" in result
+
+
+async def test_shopping_list_set_amount(mock_client):
+    result = await shopping_list_set_amount(mock_client, 5, 3.0)
+    mock_client.update_shopping_list_item.assert_called_once_with(5, {"amount": 3.0})
+    assert "5" in result
+    assert "3.0" in result
+
+
+async def test_shopping_list_set_note(mock_client):
+    result = await shopping_list_set_note(mock_client, 5, "organic")
+    mock_client.update_shopping_list_item.assert_called_once_with(5, {"note": "organic"})
+    assert "5" in result
+    assert "'organic'" in result

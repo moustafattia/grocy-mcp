@@ -142,7 +142,9 @@ class GrocyClient:
         items = await self.get_objects("shopping_list")
         return [i for i in items if i.get("shopping_list_id") == list_id]
 
-    async def add_shopping_list_item(self, product_id: int, amount: float = 1, shopping_list_id: int = 1, note: str | None = None) -> int:
+    async def add_shopping_list_item(
+        self, product_id: int, amount: float = 1, shopping_list_id: int = 1, note: str | None = None
+    ) -> int:
         data = {"product_id": product_id, "amount": amount, "shopping_list_id": shopping_list_id}
         if note:
             data["note"] = note
@@ -158,7 +160,9 @@ class GrocyClient:
         await self._request("POST", "/stock/shoppinglist/clear", json={"list_id": list_id})
 
     async def add_missing_products_to_shopping_list(self, list_id: int = 1) -> None:
-        await self._request("POST", "/stock/shoppinglist/add-missing-products", json={"list_id": list_id})
+        await self._request(
+            "POST", "/stock/shoppinglist/add-missing-products", json={"list_id": list_id}
+        )
 
     # --- Recipes ---
 
@@ -176,21 +180,9 @@ class GrocyClient:
         await self._request("POST", f"/recipes/{recipe_id}/consume")
 
     async def add_recipe_to_shopping_list(self, recipe_id: int) -> None:
-        await self._request("POST", f"/recipes/{recipe_id}/add-not-fulfilled-products-to-shoppinglist")
-
-    async def search_products(self, query: str) -> list[dict]:
-        products = await self.get_objects("products")
-        query_lower = query.lower()
-        matches = [p for p in products if query_lower in p.get("name", "").lower()]
-        barcodes = await self.get_objects("product_barcodes")
-        barcode_ids = {b["product_id"] for b in barcodes if query_lower in b.get("barcode", "").lower()}
-        for p in products:
-            if p["id"] in barcode_ids and p not in matches:
-                matches.append(p)
-        return matches
-
-    async def update_recipe(self, recipe_id: int, data: dict) -> None:
-        await self.update_object("recipes", recipe_id, data)
+        await self._request(
+            "POST", f"/recipes/{recipe_id}/add-not-fulfilled-products-to-shoppinglist"
+        )
 
     # --- Chores ---
 
