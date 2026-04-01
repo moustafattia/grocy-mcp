@@ -35,13 +35,13 @@ from grocy_mcp.core.calendar import (
     calendar_summary_data,
 )
 from grocy_mcp.core.chores import (
-    _parse_datetime,
     chore_create,
     chore_execute,
     chore_undo,
     chores_list,
     chores_overdue,
 )
+from grocy_mcp.core.utils import parse_datetime
 from grocy_mcp.core.recipes import (
     recipe_add_ingredient,
     recipe_add_to_shopping,
@@ -294,7 +294,7 @@ async def _chores_overdue_json(client: GrocyClient) -> list[dict]:
     return [
         entry
         for entry in chores
-        if (next_exec := _parse_datetime(entry.get("next_estimated_execution_time")))
+        if (next_exec := parse_datetime(entry.get("next_estimated_execution_time")))
         and next_exec < now
     ]
 

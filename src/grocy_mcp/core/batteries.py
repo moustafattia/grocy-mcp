@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 from grocy_mcp.client import GrocyClient
-from grocy_mcp.core.chores import _parse_datetime
+from grocy_mcp.core.utils import parse_datetime
 from grocy_mcp.core.resolve import resolve_entity
 
 
@@ -68,7 +68,7 @@ async def battery_details_data(client: GrocyClient, battery: str) -> dict:
     """Return detailed battery information as structured data."""
     battery_id = await resolve_entity(client, "batteries", battery)
     details = await client.get_battery(battery_id)
-    battery_data = details.get("battery") or details.get("chore") or {}
+    battery_data = details.get("battery") or {}
     return {
         **battery_data,
         "last_charged": details.get("last_charged"),
@@ -98,7 +98,7 @@ async def batteries_due_data(client: GrocyClient, days: int = 7) -> list[dict]:
 
     due_items = []
     for entry in current:
-        next_charge = _parse_datetime(entry.get("next_estimated_charge_time"))
+        next_charge = parse_datetime(entry.get("next_estimated_charge_time"))
         if next_charge and now <= next_charge <= cutoff:
             due_items.append({**entry, "next_estimated_charge_time": next_charge.isoformat()})
     return sorted(due_items, key=lambda item: item["next_estimated_charge_time"])
@@ -124,7 +124,7 @@ async def batteries_overdue_data(client: GrocyClient) -> list[dict]:
 
     overdue_items = []
     for entry in current:
-        next_charge = _parse_datetime(entry.get("next_estimated_charge_time"))
+        next_charge = parse_datetime(entry.get("next_estimated_charge_time"))
         if next_charge and next_charge < now:
             overdue_items.append({**entry, "next_estimated_charge_time": next_charge.isoformat()})
     return sorted(overdue_items, key=lambda item: item["next_estimated_charge_time"])

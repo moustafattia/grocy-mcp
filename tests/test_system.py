@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from grocy_mcp.core.system import entity_list, entity_manage, system_info
+from grocy_mcp.exceptions import GrocyValidationError
 
 
 @pytest.fixture
@@ -62,19 +63,19 @@ async def test_entity_manage_delete(mock_client):
 
 
 async def test_entity_manage_unknown_action(mock_client):
-    result = await entity_manage(mock_client, "products", "explode")
-    assert "unknown" in result.lower() or "invalid" in result.lower()
+    with pytest.raises(GrocyValidationError, match="Unknown action"):
+        await entity_manage(mock_client, "products", "explode")
 
 
 async def test_entity_manage_update_missing_obj_id(mock_client):
-    result = await entity_manage(mock_client, "products", "update", data={"name": "X"})
-    assert "requires" in result.lower()
+    with pytest.raises(GrocyValidationError, match="requires an obj_id"):
+        await entity_manage(mock_client, "products", "update", data={"name": "X"})
     mock_client.update_object.assert_not_called()
 
 
 async def test_entity_manage_delete_missing_obj_id(mock_client):
-    result = await entity_manage(mock_client, "products", "delete")
-    assert "requires" in result.lower()
+    with pytest.raises(GrocyValidationError, match="requires an obj_id"):
+        await entity_manage(mock_client, "products", "delete")
     mock_client.delete_object.assert_not_called()
 
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 
 from grocy_mcp.client import GrocyClient
-from grocy_mcp.core.chores import _parse_datetime
+from grocy_mcp.core.utils import parse_datetime
 
 
 def _parse_date(value: str | None) -> date | None:
@@ -54,7 +54,7 @@ async def calendar_summary_data(
 
     chore_rows = []
     for row in chores:
-        next_exec = _parse_datetime(row.get("next_estimated_execution_time"))
+        next_exec = parse_datetime(row.get("next_estimated_execution_time"))
         if start_date or end_date:
             if next_exec is None or not _in_date_range(next_exec.date(), start_date, end_date):
                 continue
@@ -62,7 +62,7 @@ async def calendar_summary_data(
 
     battery_rows = []
     for row in batteries:
-        next_charge = _parse_datetime(row.get("next_estimated_charge_time"))
+        next_charge = parse_datetime(row.get("next_estimated_charge_time"))
         if start_date or end_date:
             if next_charge is None or not _in_date_range(next_charge.date(), start_date, end_date):
                 continue
