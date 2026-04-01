@@ -93,13 +93,12 @@ The following statements describe the current implementation, not future intent:
 - CLI configuration is effectively environment/config-file driven.
 - The CLI does not currently support a global `--json` output mode.
 - Core functions return strings rather than structured data objects.
-- The config error messages still mention `--url` and `--api-key`, even though those flags are not currently exposed by the CLI entry point.
 
 ## Recommended Follow-ups
 
 These are reasonable next steps, but they are not blockers for the current PR:
 
-1. Decide whether to add top-level CLI config flags or simplify the config error text.
+1. Decide whether top-level CLI config flags are desirable as a future enhancement.
 2. Add a few more CLI tests for argument-rich commands such as:
    - `shopping add --list-id --note`
    - `chores execute --done-by`

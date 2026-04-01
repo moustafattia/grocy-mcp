@@ -1,4 +1,4 @@
-"""Configuration loading from env vars, TOML file, and CLI flags."""
+"""Configuration loading from explicit overrides, env vars, and TOML files."""
 
 from __future__ import annotations
 
@@ -37,13 +37,13 @@ def load_config(
 
     if not resolved_url:
         raise ValueError(
-            "Grocy URL not configured. Set GROCY_URL env var, pass --url, "
-            "or add url to config file."
+            "Grocy URL not configured. Set the GROCY_URL environment variable "
+            "or add url to the config file."
         )
     if not resolved_key:
         raise ValueError(
-            "Grocy API key not configured. Set GROCY_API_KEY env var, pass --api-key, "
-            "or add api_key to config file."
+            "Grocy API key not configured. Set the GROCY_API_KEY environment variable "
+            "or add api_key to the config file."
         )
 
     return Config(url=resolved_url.rstrip("/"), api_key=resolved_key)
