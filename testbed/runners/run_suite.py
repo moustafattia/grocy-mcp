@@ -59,17 +59,29 @@ async def run_suite(name: str) -> list[str]:
         raise RuntimeError(f"Unknown suite '{name}'.")
 
     warnings: list[str] = []
+    passed = 0
+    skipped = 0
+    total = len(SUITES[name])
     seed_profile = config.seed_dir / "demo_profile.json"
     bootstrapped = False
+    print(f"Running testbed suite '{name}' with {total} scenario(s).")
     for scenario_id, mode, source, transport in SUITES[name]:
+        scenario_index = passed + skipped + 1
         if config.manage_environment:
             if not bootstrapped:
+                print("Preparing Docker-backed demo Grocy environment...")
                 warnings.extend(ensure_demo_environment(config, seed_profile))
                 bootstrapped = True
             else:
+                print(f"[{scenario_index}/{total}] Resetting demo data before {scenario_id}...")
                 warnings.extend(reset_demo_data(config, seed_profile))
         if not source_ready(source, config):
+            print(
+                f"[{scenario_index}/{total}] Skipped {scenario_id} ({mode}/{source}/{transport}): "
+                "provider not configured."
+            )
             warnings.append(f"Skipped {scenario_id}/{mode}/{source}: provider not configured.")
+            skipped += 1
             continue
         provider_model = None
         if source == "openai":
@@ -79,13 +91,25 @@ async def run_suite(name: str) -> list[str]:
         elif source == "openai_compatible":
             provider_model = config.openai_compatible_model
 
-        await run_scenario(
+        print(
+            f"[{scenario_index}/{total}] Running {scenario_id} via {mode}/{source}/{transport}..."
+        )
+        report = await run_scenario(
             scenario_id=scenario_id,
             mode=mode,
             source=source,
             provider_model=provider_model,
             mcp_transport=transport,
         )
+        passed += 1
+        print(
+            f"[{scenario_index}/{total}] Passed {scenario_id} in {report.duration_ms}ms "
+            f"({mode}/{source}/{transport})."
+        )
+    print(
+        f"Suite '{name}' completed: {passed} passed, {skipped} skipped, {len(warnings)} warning(s)."
+    )
+    print(f"Testbed reports written to: {config.reports_dir}")
     return warnings
 
 
@@ -95,7 +119,7 @@ def main() -> None:
     args = parser.parse_args()
     warnings = asyncio.run(run_suite(args.suite))
     if warnings:
-        print("Suite completed with warnings:")
+        print("Warnings:")
         for warning in warnings:
             print(f"  - {warning}")
 

@@ -287,7 +287,12 @@ async def test_stdio_runner_unwraps_fastmcp_call_tool_result():
 async def test_run_suite_bootstraps_once_then_resets(monkeypatch):
     bootstrap_calls: list[str] = []
     reset_calls: list[str] = []
-    run_mock = AsyncMock()
+    run_mock = AsyncMock(
+        side_effect=[
+            SimpleNamespace(duration_ms=101),
+            SimpleNamespace(duration_ms=202),
+        ]
+    )
 
     monkeypatch.setattr(
         "testbed.runners.run_suite.SUITES",
@@ -308,6 +313,7 @@ async def test_run_suite_bootstraps_once_then_resets(monkeypatch):
         lambda: SimpleNamespace(
             manage_environment=True,
             seed_dir=TESTBED_DIR / "seed",
+            reports_dir=TESTBED_DIR / "runtime" / "reports",
             openai_model=None,
             anthropic_model=None,
             openai_compatible_model=None,
@@ -320,3 +326,74 @@ async def test_run_suite_bootstraps_once_then_resets(monkeypatch):
     assert len(bootstrap_calls) == 1, "full bootstrap should run exactly once"
     assert len(reset_calls) == 1, "lightweight reset should run for subsequent scenarios"
     assert run_mock.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_run_suite_prints_progress_and_summary(monkeypatch, capsys):
+    run_mock = AsyncMock(
+        side_effect=[
+            SimpleNamespace(duration_ms=101),
+            SimpleNamespace(duration_ms=202),
+        ]
+    )
+
+    monkeypatch.setattr(
+        "testbed.runners.run_suite.SUITES",
+        {"pr": [("a", "cli", "golden", "in_process"), ("b", "mcp", "golden", "in_process")]},
+    )
+    monkeypatch.setattr("testbed.runners.run_suite.run_scenario", run_mock)
+    monkeypatch.setattr("testbed.runners.run_suite.source_ready", lambda source, config: True)
+    monkeypatch.setattr(
+        "testbed.runners.run_suite.TestbedConfig.from_env",
+        lambda: SimpleNamespace(
+            manage_environment=False,
+            seed_dir=TESTBED_DIR / "seed",
+            reports_dir=TESTBED_DIR / "runtime" / "reports",
+            openai_model=None,
+            anthropic_model=None,
+            openai_compatible_model=None,
+        ),
+    )
+
+    warnings = await run_suite("pr")
+
+    output = capsys.readouterr().out
+    assert warnings == []
+    assert "Running testbed suite 'pr' with 2 scenario(s)." in output
+    assert "[1/2] Running a via cli/golden/in_process..." in output
+    assert "[1/2] Passed a in 101ms (cli/golden/in_process)." in output
+    assert "[2/2] Running b via mcp/golden/in_process..." in output
+    assert "[2/2] Passed b in 202ms (mcp/golden/in_process)." in output
+    assert "Suite 'pr' completed: 2 passed, 0 skipped, 0 warning(s)." in output
+    assert f"Testbed reports written to: {TESTBED_DIR / 'runtime' / 'reports'}" in output
+
+
+@pytest.mark.asyncio
+async def test_run_suite_prints_skipped_provider_summary(monkeypatch, capsys):
+    run_mock = AsyncMock()
+
+    monkeypatch.setattr(
+        "testbed.runners.run_suite.SUITES",
+        {"nightly": [("a", "mcp", "openai", "stdio")]},
+    )
+    monkeypatch.setattr("testbed.runners.run_suite.run_scenario", run_mock)
+    monkeypatch.setattr("testbed.runners.run_suite.source_ready", lambda source, config: False)
+    monkeypatch.setattr(
+        "testbed.runners.run_suite.TestbedConfig.from_env",
+        lambda: SimpleNamespace(
+            manage_environment=False,
+            seed_dir=TESTBED_DIR / "seed",
+            reports_dir=TESTBED_DIR / "runtime" / "reports",
+            openai_model=None,
+            anthropic_model=None,
+            openai_compatible_model=None,
+        ),
+    )
+
+    warnings = await run_suite("nightly")
+
+    output = capsys.readouterr().out
+    assert warnings == ["Skipped a/mcp/openai: provider not configured."]
+    assert "[1/1] Skipped a (mcp/openai/stdio): provider not configured." in output
+    assert "Suite 'nightly' completed: 0 passed, 1 skipped, 1 warning(s)." in output
+    assert run_mock.await_count == 0
