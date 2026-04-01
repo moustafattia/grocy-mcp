@@ -269,3 +269,100 @@ def test_shopping_add_short_flags():
 
     assert result.exit_code == 0
     mock_add.assert_awaited_once_with(mock_client, "Milk", 2.0, 3, "organic")
+
+
+# ------------------------------------------------ CLI end-to-end output tests
+
+
+def test_cli_stock_overview_produces_formatted_output():
+    """CLI stock overview should produce the actual formatted output, not just 'ok'."""
+    with patch("grocy_mcp.cli.app.stock_overview", new_callable=AsyncMock) as mock_fn:
+        mock_fn.return_value = "Current stock:\n  [1] Milk — 3"
+        with patch("grocy_mcp.cli.app._client") as mock_cf:
+            mock_cf.return_value.__aenter__.return_value = MagicMock()
+            result = runner.invoke(app, ["stock", "overview"])
+
+    assert result.exit_code == 0
+    assert "Current stock:" in result.output
+    assert "[1] Milk" in result.output
+
+
+def test_cli_error_handling():
+    """GrocyError should print to stderr and exit 1."""
+    from grocy_mcp.exceptions import GrocyAuthError
+
+    with patch("grocy_mcp.cli.app.stock_overview", new_callable=AsyncMock) as mock_fn:
+        mock_fn.side_effect = GrocyAuthError("Auth failed (401): bad key")
+        with patch("grocy_mcp.cli.app._client") as mock_cf:
+            mock_cf.return_value.__aenter__.return_value = MagicMock()
+            result = runner.invoke(app, ["stock", "overview"])
+
+    assert result.exit_code == 1
+    assert "Error:" in result.output or "Auth failed" in result.output
+
+
+def test_cli_error_json_mode():
+    """In --json mode, errors should be JSON formatted."""
+    from grocy_mcp.exceptions import GrocyNotFoundError
+
+    with patch("grocy_mcp.cli.app._client") as mock_cf:
+        mock_client = MagicMock()
+        mock_client.get_stock = AsyncMock(side_effect=GrocyNotFoundError("not found"))
+        mock_cf.return_value.__aenter__.return_value = mock_client
+        result = runner.invoke(app, ["--json", "stock", "overview"])
+
+    assert result.exit_code == 1
+    import json
+    data = json.loads(result.output)
+    assert "error" in data
+
+
+def test_cli_tasks_list_command():
+    """Tasks list should work through the CLI."""
+    with patch("grocy_mcp.cli.app.tasks_list", new_callable=AsyncMock) as mock_fn:
+        mock_fn.return_value = "Tasks:\n  [1] Buy milk"
+        with patch("grocy_mcp.cli.app._client") as mock_cf:
+            mock_cf.return_value.__aenter__.return_value = MagicMock()
+            result = runner.invoke(app, ["tasks", "list"])
+
+    assert result.exit_code == 0
+    assert "Buy milk" in result.output
+
+
+def test_cli_locations_list_command():
+    """Locations list should work through the CLI."""
+    with patch("grocy_mcp.cli.app.locations_list", new_callable=AsyncMock) as mock_fn:
+        mock_fn.return_value = "Locations:\n  [1] Fridge"
+        with patch("grocy_mcp.cli.app._client") as mock_cf:
+            mock_cf.return_value.__aenter__.return_value = MagicMock()
+            result = runner.invoke(app, ["locations", "list"])
+
+    assert result.exit_code == 0
+    assert "Fridge" in result.output
+
+
+def test_cli_meal_plan_list_command():
+    """Meal plan list should work through the CLI."""
+    with patch("grocy_mcp.cli.app.meal_plan_list", new_callable=AsyncMock) as mock_fn:
+        mock_fn.return_value = "Meal plan:\n  [1] 2026-04-05 — Pancakes"
+        with patch("grocy_mcp.cli.app._client") as mock_cf:
+            mock_cf.return_value.__aenter__.return_value = MagicMock()
+            result = runner.invoke(app, ["meal-plan", "list"])
+
+    assert result.exit_code == 0
+    assert "Pancakes" in result.output
+
+
+def test_cli_recipe_preview_command():
+    """Recipe preview should work through the CLI."""
+    with patch(
+        "grocy_mcp.cli.app.recipe_consume_preview", new_callable=AsyncMock
+    ) as mock_fn:
+        mock_fn.return_value = "Preview — consuming recipe 'Pancakes' would deduct:\n  Flour: 2 — OK"
+        with patch("grocy_mcp.cli.app._client") as mock_cf:
+            mock_cf.return_value.__aenter__.return_value = MagicMock()
+            result = runner.invoke(app, ["recipes", "preview", "Pancakes"])
+
+    assert result.exit_code == 0
+    assert "Preview" in result.output
+    assert "Flour" in result.output
