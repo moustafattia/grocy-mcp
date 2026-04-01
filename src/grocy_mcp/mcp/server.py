@@ -11,6 +11,7 @@ from fastmcp import FastMCP
 
 from grocy_mcp.client import GrocyClient
 from grocy_mcp.config import load_config
+from grocy_mcp.exceptions import GrocyValidationError
 from grocy_mcp.core.chores import (
     chore_create,
     chore_execute,
@@ -71,6 +72,14 @@ async def _get_client() -> AsyncIterator[GrocyClient]:
     config = load_config()
     async with GrocyClient(config.url, config.api_key) as client:
         yield client
+
+
+def _parse_json_arg(value: str, label: str) -> dict | list:
+    """Parse a JSON tool argument and raise a user-facing validation error on failure."""
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError as e:
+        raise GrocyValidationError(f"Invalid JSON for {label}: {e}") from e
 
 
 def create_mcp_server() -> FastMCP:
@@ -239,7 +248,7 @@ def create_mcp_server() -> FastMCP:
                   Example: '{"amount": 3, "note": "unsalted"}'.
         """
         async with _get_client() as client:
-            return await shopping_list_update(client, item_id, json.loads(data))
+            return await shopping_list_update(client, item_id, _parse_json_arg(data, "data"))
 
     @mcp.tool()
     async def shopping_list_remove_tool(item_id: int) -> str:
@@ -375,7 +384,7 @@ def create_mcp_server() -> FastMCP:
                          stock_search_tool to find product IDs.
                          Example: '[{"product_id": 1, "amount": 2}, {"product_id": 5, "amount": 0.5}]'.
         """
-        parsed_ingredients = json.loads(ingredients)
+        parsed_ingredients = _parse_json_arg(ingredients, "ingredients")
         async with _get_client() as client:
             return await recipe_create(client, name, description, parsed_ingredients or None)
 
@@ -395,7 +404,7 @@ def create_mcp_server() -> FastMCP:
                          "product" (name string) and "amount" (number).
                          Example: '[{"product": "Flour", "amount": 2}, {"product": "Banana", "amount": 3}]'.
         """
-        parsed_ingredients = json.loads(ingredients)
+        parsed_ingredients = _parse_json_arg(ingredients, "ingredients")
         async with _get_client() as client:
             return await recipe_create_by_name(
                 client, name, description, parsed_ingredients or None
@@ -698,7 +707,7 @@ def create_mcp_server() -> FastMCP:
                   by entity type. Example for products: '{"name": "Oat Milk"}'.
                   Example for locations: '{"name": "Pantry", "is_freezer": 0}'.
         """
-        parsed_data = json.loads(data)
+        parsed_data = _parse_json_arg(data, "data")
         async with _get_client() as client:
             return await entity_manage(client, entity, "create", data=parsed_data or None)
 
@@ -714,7 +723,7 @@ def create_mcp_server() -> FastMCP:
             data: JSON object with fields to update.
                   Example: '{"name": "Updated Name", "description": "New desc"}'.
         """
-        parsed_data = json.loads(data)
+        parsed_data = _parse_json_arg(data, "data")
         async with _get_client() as client:
             return await entity_manage(client, entity, "update", obj_id=obj_id, data=parsed_data)
 
