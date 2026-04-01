@@ -5,6 +5,7 @@ from __future__ import annotations
 from grocy_mcp.client import GrocyClient
 from grocy_mcp.core.reference_data import _format_details
 from grocy_mcp.core.resolve import resolve_entity
+from grocy_mcp.exceptions import GrocyError
 
 
 def _equipment_battery_id(item: dict) -> int | None:
@@ -71,7 +72,7 @@ async def equipment_details_data(client: GrocyClient, equipment: str) -> dict:
         try:
             battery = await client.get_object("batteries", battery_id)
             item["linked_battery_name"] = battery.get("name", battery_id)
-        except Exception:
+        except GrocyError:
             item["linked_battery_id"] = battery_id
     return item
 

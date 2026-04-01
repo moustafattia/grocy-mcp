@@ -157,16 +157,23 @@ async def recipe_create_by_name(
     recipe_id = await client.create_object("recipes", recipe_data)
 
     ingredient_count = 0
+    failed: list[str] = []
     if ingredients:
         for ingredient in ingredients:
             product_name = ingredient.get("product", "")
             amount = ingredient.get("amount", 1)
-            product_id = await resolve_product(client, product_name)
-            pos_data = {"recipe_id": recipe_id, "product_id": product_id, "amount": amount}
-            await client.create_object("recipes_pos", pos_data)
-            ingredient_count += 1
+            try:
+                product_id = await resolve_product(client, product_name)
+                pos_data = {"recipe_id": recipe_id, "product_id": product_id, "amount": amount}
+                await client.create_object("recipes_pos", pos_data)
+                ingredient_count += 1
+            except Exception as exc:
+                failed.append(f"{product_name} ({exc})")
 
-    return f"Recipe '{name}' created (ID {recipe_id}) with {ingredient_count} ingredient(s)."
+    result = f"Recipe '{name}' created (ID {recipe_id}) with {ingredient_count} ingredient(s)."
+    if failed:
+        result += f"\nFailed ingredients: {', '.join(failed)}"
+    return result
 
 
 async def recipe_update(

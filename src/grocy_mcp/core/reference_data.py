@@ -26,7 +26,6 @@ EXPOSED_ENTITIES = {
     "task_categories",
     "product_groups",
     "equipment",
-    "api_keys",
     "userfields",
     "userentities",
     "userobjects",
@@ -47,7 +46,6 @@ EXPOSED_ENTITIES = {
 
 READ_ONLY_ENTITIES = {
     "stock_log",
-    "api_keys",
     "stock",
     "stock_current_locations",
     "chores_log",

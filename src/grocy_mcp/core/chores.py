@@ -6,24 +6,7 @@ from datetime import datetime, timezone
 
 from grocy_mcp.client import GrocyClient
 from grocy_mcp.core.resolve import resolve_chore
-
-_DATETIME_FORMATS = [
-    "%Y-%m-%d %H:%M:%S",
-    "%Y-%m-%dT%H:%M:%S",
-    "%Y-%m-%d",
-]
-
-
-def _parse_datetime(value: str | None) -> datetime | None:
-    """Parse a datetime string from Grocy, returning None if unparseable."""
-    if not value:
-        return None
-    for fmt in _DATETIME_FORMATS:
-        try:
-            return datetime.strptime(value, fmt).replace(tzinfo=timezone.utc)
-        except ValueError:
-            continue
-    return None
+from grocy_mcp.core.utils import parse_datetime
 
 
 async def chores_list(client: GrocyClient) -> str:
@@ -50,7 +33,7 @@ async def chores_overdue(client: GrocyClient) -> str:
     overdue = []
     for entry in chores:
         next_exec_str = entry.get("next_estimated_execution_time")
-        next_exec = _parse_datetime(next_exec_str)
+        next_exec = parse_datetime(next_exec_str)
         if next_exec and next_exec < now:
             chore_data = entry.get("chore") or {}
             name = chore_data.get("name", f"Chore {entry.get('chore_id')}")

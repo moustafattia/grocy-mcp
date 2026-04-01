@@ -71,6 +71,8 @@ class GrocyClient:
                 raise GrocyNotFoundError(f"Not found: {body}")
             case code if code >= 500:
                 raise GrocyServerError(f"Server error ({code}): {body}")
+            case code:
+                raise GrocyServerError(f"HTTP error ({code}): {body}")
 
     # --- Generic CRUD ---
 

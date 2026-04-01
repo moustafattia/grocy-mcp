@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from grocy_mcp.client import GrocyClient
+from grocy_mcp.exceptions import GrocyValidationError
 
 
 async def system_info(client: GrocyClient) -> str:
@@ -56,16 +57,18 @@ async def entity_manage(
 
         case "update":
             if obj_id is None:
-                return "Update requires an obj_id."
+                raise GrocyValidationError("Update requires an obj_id.")
             payload = data or {}
             await client.update_object(entity, obj_id, payload)
             return f"Updated {entity} object ID {obj_id}."
 
         case "delete":
             if obj_id is None:
-                return "Delete requires an obj_id."
+                raise GrocyValidationError("Delete requires an obj_id.")
             await client.delete_object(entity, obj_id)
             return f"Deleted {entity} object ID {obj_id}."
 
         case _:
-            return f"Unknown action '{action}'. Valid actions: create, update, delete."
+            raise GrocyValidationError(
+                f"Unknown action '{action}'. Valid actions: create, update, delete."
+            )
