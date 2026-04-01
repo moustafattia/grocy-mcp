@@ -126,6 +126,37 @@ The MCP server currently supports:
 - `stdio`
 - `streamable-http`
 
+## Agent workflow examples
+
+These are practical multi-step workflows an AI agent can perform by chaining
+grocy-mcp tools together:
+
+### "What can I cook tonight?"
+
+1. `recipes_list_tool` — see all available recipes
+2. `recipe_fulfillment_tool("Spaghetti Bolognese")` — check if ingredients are in stock
+3. If fulfillable: `recipe_consume_tool("Spaghetti Bolognese")` — deduct ingredients
+4. If not: `recipe_add_to_shopping_tool("Spaghetti Bolognese")` — add missing items to shopping list
+
+### "Restock after a grocery run"
+
+1. `shopping_list_view_tool` — see what was on the list
+2. For each purchased item: `stock_add_tool("Milk", 2)` — add to stock
+3. `shopping_list_remove_tool(item_id)` — clear purchased items from the list
+
+### "Weekly kitchen check"
+
+1. `stock_expiring_tool` — find expiring or below-minimum products
+2. `chores_overdue_tool` — find overdue household chores
+3. `shopping_list_add_missing_tool` — auto-add understocked products to shopping list
+4. For each overdue chore: `chore_execute_tool("Vacuum living room")` — mark as done
+
+### "Add a new recipe from a description"
+
+1. `stock_search_tool("flour")` — find product IDs for ingredients
+2. `recipe_create_tool("Banana Bread", "Easy banana bread", '[{"product_id": 3, "amount": 2}, ...]')` — create the recipe
+3. `recipe_fulfillment_tool("Banana Bread")` — check if you can make it right away
+
 ## CLI usage
 
 Top-level command groups:
