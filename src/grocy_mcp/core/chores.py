@@ -69,7 +69,7 @@ async def chores_overdue(client: GrocyClient) -> str:
 async def chore_execute(client: GrocyClient, chore: str, done_by: int | None = None) -> str:
     """Execute (mark as done) a chore."""
     chore_id = await resolve_chore(client, chore)
-    await client.execute_chore(chore_id)
+    await client.execute_chore(chore_id, done_by)
     return f"Chore '{chore}' executed."
 
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import asyncio
 import json
 from contextlib import asynccontextmanager
 from typing import AsyncIterator

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import sys
 from typing import Optional
 
 import typer
@@ -81,13 +80,8 @@ def _client() -> GrocyClient:
 
 
 @app.callback()
-def main_callback(
-    ctx: typer.Context,
-    json_output: bool = typer.Option(False, "--json", help="Output as JSON where supported."),
-) -> None:
+def main_callback() -> None:
     """Grocy CLI — control your Grocy instance from the command line."""
-    ctx.ensure_object(dict)
-    ctx.obj["json"] = json_output
 
 
 # -------------------------------------------------------------------- Stock

@@ -2,7 +2,6 @@
 
 import httpx
 import pytest
-import respx
 
 from grocy_mcp.client import GrocyClient
 from grocy_mcp.exceptions import (

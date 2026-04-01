@@ -43,7 +43,7 @@ async def shopping_list_add(
 ) -> str:
     """Add a product to the shopping list."""
     product_id = await resolve_product(client, product)
-    item_id = await client.add_shopping_list_item(product_id, amount)
+    item_id = await client.add_shopping_list_item(product_id, amount, list_id, note)
     return f"Added {amount} of '{product}' to shopping list (item ID {item_id})."
 
 

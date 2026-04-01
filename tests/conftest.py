@@ -1,6 +1,5 @@
 """Shared test fixtures."""
 
-import httpx
 import pytest
 import respx
 
