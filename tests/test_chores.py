@@ -1,8 +1,6 @@
 """Tests for the chores core module."""
 
 from unittest.mock import AsyncMock, patch
-from datetime import datetime, timezone
-
 import pytest
 
 from grocy_mcp.core.chores import (
@@ -57,8 +55,8 @@ async def test_chores_overdue(mock_client):
 
 async def test_chore_execute(mock_client):
     with patch("grocy_mcp.core.chores.resolve_chore", return_value=1):
-        result = await chore_execute(mock_client, "Vacuum")
-        mock_client.execute_chore.assert_called_once_with(1)
+        result = await chore_execute(mock_client, "Vacuum", done_by=7)
+        mock_client.execute_chore.assert_called_once_with(1, 7)
         assert result
 
 

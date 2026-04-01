@@ -1,7 +1,11 @@
 # grocy-mcp Design Spec
 
 **Date:** 2026-03-31
-**Status:** Approved
+**Status:** Historical
+
+> Historical snapshot retained for context. For the current design and implementation state, see:
+> - [2026-04-01-grocy-mcp-design.md](C:/Workspace/grocy-mcp/docs/specs/2026-04-01-grocy-mcp-design.md)
+> - [2026-04-01-grocy-mcp-implementation.md](C:/Workspace/grocy-mcp/docs/specs/2026-04-01-grocy-mcp-implementation.md)
 
 ## Overview
 

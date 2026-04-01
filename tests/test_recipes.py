@@ -1,6 +1,6 @@
 """Tests for the recipes core module."""
 
-from unittest.mock import AsyncMock, call, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 

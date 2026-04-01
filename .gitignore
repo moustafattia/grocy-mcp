@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config (may contain secrets)
+config.toml
+CLAUDE.md
+AGENTS.md

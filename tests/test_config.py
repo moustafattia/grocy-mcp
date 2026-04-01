@@ -20,6 +20,17 @@ def test_config_missing_url_raises():
             assert False, "Should have raised"
         except ValueError as e:
             assert "GROCY_URL" in str(e)
+            assert "--url" not in str(e)
+
+
+def test_config_missing_api_key_raises():
+    with patch.dict(os.environ, {"GROCY_URL": "http://localhost:9192"}, clear=True):
+        try:
+            load_config()
+            assert False, "Should have raised"
+        except ValueError as e:
+            assert "GROCY_API_KEY" in str(e)
+            assert "--api-key" not in str(e)
 
 
 def test_config_overrides():

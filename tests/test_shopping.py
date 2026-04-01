@@ -42,8 +42,8 @@ async def test_shopping_list_view(mock_client):
 
 async def test_shopping_list_add(mock_client):
     with patch("grocy_mcp.core.shopping.resolve_product", return_value=1):
-        result = await shopping_list_add(mock_client, "Milk", 2.0)
-        mock_client.add_shopping_list_item.assert_called_once_with(1, 2.0)
+        result = await shopping_list_add(mock_client, "Milk", 2.0, list_id=3, note="organic")
+        mock_client.add_shopping_list_item.assert_called_once_with(1, 2.0, 3, "organic")
         assert result
 
 
