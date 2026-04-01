@@ -26,7 +26,7 @@ uvx grocy-mcp --transport stdio
 
 grocy-mcp reads configuration from (in priority order):
 
-1. CLI flags / environment variables
+1. Environment variables
 2. TOML config file
 
 ### Environment variables
@@ -93,6 +93,7 @@ grocy stock barcode 5000112637922
 # Shopping list
 grocy shopping view
 grocy shopping add Butter --amount 3
+grocy shopping add "Oat Milk" --amount 2 --list-id 2 --note "for breakfast"
 grocy shopping clear
 
 # Recipes
@@ -106,6 +107,7 @@ grocy recipes add-to-shopping "Spaghetti Bolognese"
 grocy chores list
 grocy chores overdue
 grocy chores execute "Vacuum living room"
+grocy chores execute "Vacuum living room" --done-by 1
 grocy chores undo "Vacuum living room"
 
 # System
