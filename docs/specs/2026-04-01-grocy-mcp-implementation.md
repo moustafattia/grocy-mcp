@@ -1,113 +1,157 @@
 # grocy-mcp Implementation Status
 
-**Date:** 2026-04-01
-**Status:** Current
+**Date:** 2026-04-01  
+**Status:** Authoritative current implementation
 
 ## Summary
 
-This document records the implemented state of `grocy-mcp` as of 2026-04-01 and captures the cleanup completed in the current PR branch.
+This document records the implemented state of `grocy-mcp` after completing the checkpoint roadmap through CP16.
 
-The codebase is functional, tested, and organized around a shared async core used by both the MCP server and CLI.
+The repository now provides:
+
+- an 89-tool MCP server
+- a mirrored CLI with stock, planning, metadata, workflow, discovery, file, and print surfaces
+- stable workflow preview/apply contracts for LLM-assisted Grocy use
+- first-class support for the highest-value Grocy household domains outside generic CRUD
 
 ## Implemented Areas
 
 ### Client Layer
 
-[client.py](C:/Workspace/grocy-mcp/src/grocy_mcp/client.py) is implemented and currently provides:
+[client.py](C:/Workspace/grocy-mcp/src/grocy_mcp/client.py) now covers:
 
-- generic CRUD calls via `/objects/{entity}`
-- stock operations
-- shopping-list operations
-- recipe operations
-- chore operations
-- system info access
-- transient retry handling for `502`, `503`, and `504`
+- generic entity CRUD
+- stock, shopping, recipes, chores, tasks, meal plan
+- batteries
+- calendar iCal export and sharing link
+- file download/upload/delete
+- print helper endpoints
+- retry handling for transient `502`, `503`, and `504` responses
 
 ### Core Layer
 
-Current core modules:
+The current core modules include:
 
-- [stock.py](C:/Workspace/grocy-mcp/src/grocy_mcp/core/stock.py)
-- [shopping.py](C:/Workspace/grocy-mcp/src/grocy_mcp/core/shopping.py)
-- [recipes.py](C:/Workspace/grocy-mcp/src/grocy_mcp/core/recipes.py)
-- [chores.py](C:/Workspace/grocy-mcp/src/grocy_mcp/core/chores.py)
-- [system.py](C:/Workspace/grocy-mcp/src/grocy_mcp/core/system.py)
-- [resolve.py](C:/Workspace/grocy-mcp/src/grocy_mcp/core/resolve.py)
+- stock and stock journal
+- shopping
+- recipes
+- chores
+- locations
+- tasks
+- meal plan
+- workflow preview/apply
+- batteries
+- equipment
+- calendar
+- files/print
+- reference-data/discovery helpers
+- system and generic entity management
 
-These modules currently:
+The core layer is intentionally split between:
 
-- resolve friendly names to IDs where needed
-- call the client layer
-- return formatted human-readable output
+- human-readable formatted output helpers
+- structured data helpers for JSON/reporting surfaces
 
 ### Interface Layer
 
-The repo currently ships:
+[server.py](C:/Workspace/grocy-mcp/src/grocy_mcp/mcp/server.py) and [app.py](C:/Workspace/grocy-mcp/src/grocy_mcp/cli/app.py) now expose:
 
-- an MCP server in [server.py](C:/Workspace/grocy-mcp/src/grocy_mcp/mcp/server.py)
-- a CLI in [app.py](C:/Workspace/grocy-mcp/src/grocy_mcp/cli/app.py)
+- legacy day-to-day household commands/tools
+- workflow preview/apply helpers
+- catalog metadata helpers
+- batteries and equipment
+- planning summaries and iCal helpers
+- file and print helpers
+- entity discovery helpers
 
-The MCP server exposes 30 tools. The CLI mirrors the same domains with Typer subcommands.
+## Completed Checkpoints
 
-## Fixes Included In The Current PR
+The roadmap is fully implemented in the current branch:
 
-The current PR branch fixes several behavior and quality issues identified during repo analysis.
+- CP01–CP06: workflow contracts and preview/apply surface
+- CP07–CP08: shopping metadata, quantity metadata, product groups, and price-history views
+- CP09–CP10: batteries and equipment
+- CP11–CP12: task categories, assignment-aware task output, meal-plan sections, and richer meal-plan reporting
+- CP13–CP15: calendar summaries, files/print helpers, and discovery tools
+- CP16: support policy, authoritative docs, and completed coverage matrix
 
-### Functional Fixes
+## Current Interface Highlights
 
-1. Shopping-list add now forwards `list_id` and `note`.
-   Before this change, [shopping.py](C:/Workspace/grocy-mcp/src/grocy_mcp/core/shopping.py) accepted those parameters but dropped them before the client call.
+### Workflow
 
-2. Chore execution now forwards `done_by`.
-   Before this change, [chores.py](C:/Workspace/grocy-mcp/src/grocy_mcp/core/chores.py) accepted `done_by` but did not pass it to the client.
+Implemented workflow helpers:
 
-3. The unused CLI `--json` callback behavior was removed.
-   The flag was advertised in code but not implemented meaningfully, so it was removed to match actual behavior.
+- product-match preview
+- stock-intake preview/apply
+- shopping-reconcile preview/apply
 
-### Test and Hygiene Fixes
+Apply flows accept explicit IDs only.
 
-4. CLI tests were rewritten to avoid unawaited coroutine warnings.
-   The new tests exercise the async command path more directly.
+### Catalog
 
-5. Unused imports flagged by Ruff were removed.
+Implemented first-class catalog coverage:
 
-6. README and design docs were aligned with the current CLI and MCP implementation.
+- shopping lists
+- shopping locations
+- quantity units
+- quantity-unit conversions
+- product groups
+- task categories
+- meal-plan sections
+- products-last-purchased
+- products-average-price
+
+### Household and Planning
+
+Implemented first-class household/planning coverage:
+
+- batteries
+- equipment
+- meal-plan summary
+- calendar summary
+- iCal export and sharing link
+
+### Files, Print, and Discovery
+
+Implemented automation-friendly helpers for:
+
+- file-group download/upload/delete
+- stock-entry, product, recipe, chore, battery, and shopping-list print triggers
+- candidate search
+- entity description
+- field discovery
+
+## Stability Notes
+
+The following are now treated as compatibility-sensitive:
+
+- MCP tool names
+- CLI command names
+- documented workflow JSON contracts
+
+The support policy and release checklist live in [SUPPORT.md](C:/Workspace/grocy-mcp/SUPPORT.md).
 
 ## Validation
 
-Validation run on this branch:
+Validation run for the current implementation:
 
-- `ruff check src tests`
 - `pytest -q`
+- `ruff check src tests`
+- `ruff format --check src tests`
 
 Current result at the time of writing:
 
-- Ruff passes
-- Pytest passes with `65 passed`
-- the remaining warning is a local `.pytest_cache` permission warning, not a test failure
-
-## Current Constraints
-
-The following statements describe the current implementation, not future intent:
-
-- CLI configuration is effectively environment/config-file driven.
-- The CLI does not currently support a global `--json` output mode.
-- Core functions return strings rather than structured data objects.
-
-## Recommended Follow-ups
-
-These are reasonable next steps, but they are not blockers for the current PR:
-
-1. Decide whether top-level CLI config flags are desirable as a future enhancement.
-2. Add a few more CLI tests for argument-rich commands such as:
-   - `shopping add --list-id --note`
-   - `chores execute --done-by`
-   - `shopping update` with JSON payloads
-   - `entity manage` with create/update/delete flows
-3. Decide whether the historical March planning docs should remain as archival artifacts or be superseded explicitly by the new April docs.
+- `205 passed, 4 skipped`
+- Ruff lint passes
+- Ruff format check passes
+- the remaining pytest warning is a local `.pytest_cache` permission warning, not an application failure
 
 ## Relationship To Older Docs
 
-The March 2026 documents in `docs/specs/` are useful as historical design and planning artifacts, but they no longer fully represent the current shipped behavior.
+Historical March 2026 documents remain useful as archival context, but they are not the primary source of truth.
 
-This file and [2026-04-01-grocy-mcp-design.md](C:/Workspace/grocy-mcp/docs/specs/2026-04-01-grocy-mcp-design.md) are intended to document the current state of the repository more accurately.
+The authoritative current docs are:
+
+- [2026-04-01-grocy-mcp-design.md](C:/Workspace/grocy-mcp/docs/specs/2026-04-01-grocy-mcp-design.md)
+- [2026-04-01-grocy-mcp-implementation.md](C:/Workspace/grocy-mcp/docs/specs/2026-04-01-grocy-mcp-implementation.md)
+- [2026-04-01-grocy-mcp-workflow-design.md](C:/Workspace/grocy-mcp/docs/specs/2026-04-01-grocy-mcp-workflow-design.md)

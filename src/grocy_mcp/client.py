@@ -207,6 +207,110 @@ class GrocyClient:
     async def undo_chore_execution(self, execution_id: int) -> None:
         await self._request("POST", f"/chores/executions/{execution_id}/undo")
 
+    async def print_chore_label(self, chore_id: int) -> dict:
+        resp = await self._request("GET", f"/chores/{chore_id}/printlabel")
+        return resp.json()
+
+    # --- Batteries ---
+
+    async def get_batteries(self) -> list[dict]:
+        resp = await self._request("GET", "/batteries")
+        return resp.json()
+
+    async def get_battery(self, battery_id: int) -> dict:
+        resp = await self._request("GET", f"/batteries/{battery_id}")
+        return resp.json()
+
+    async def charge_battery(self, battery_id: int, tracked_time: str | None = None) -> dict:
+        data: dict[str, Any] = {}
+        if tracked_time is not None:
+            data["tracked_time"] = tracked_time
+        resp = await self._request("POST", f"/batteries/{battery_id}/charge", json=data)
+        return resp.json()
+
+    async def undo_battery_charge_cycle(self, charge_cycle_id: int) -> None:
+        await self._request("POST", f"/batteries/charge-cycles/{charge_cycle_id}/undo")
+
+    async def print_battery_label(self, battery_id: int) -> dict:
+        resp = await self._request("GET", f"/batteries/{battery_id}/printlabel")
+        return resp.json()
+
+    # --- Tasks ---
+
+    async def get_tasks(self) -> list[dict]:
+        resp = await self._request("GET", "/tasks")
+        return resp.json()
+
+    async def complete_task(self, task_id: int, done_time: str | None = None) -> dict:
+        data: dict[str, Any] = {}
+        if done_time is not None:
+            data["done_time"] = done_time
+        resp = await self._request("POST", f"/tasks/{task_id}/complete", json=data)
+        return resp.json()
+
+    async def undo_task(self, task_id: int) -> None:
+        await self._request("POST", f"/tasks/{task_id}/undo")
+
+    # --- Calendar ---
+
+    async def get_calendar_ical(self) -> str:
+        resp = await self._request("GET", "/calendar/ical")
+        return resp.text
+
+    async def get_calendar_sharing_link(self) -> dict:
+        resp = await self._request("GET", "/calendar/ical/sharing-link")
+        return resp.json()
+
+    # --- Files ---
+
+    async def download_file(
+        self,
+        group: str,
+        file_name_b64: str,
+        force_serve_as: str | None = None,
+        best_fit_width: int | None = None,
+        best_fit_height: int | None = None,
+    ) -> tuple[bytes, str | None]:
+        params: dict[str, Any] = {}
+        if force_serve_as is not None:
+            params["force_serve_as"] = force_serve_as
+        if best_fit_width is not None:
+            params["best_fit_width"] = best_fit_width
+        if best_fit_height is not None:
+            params["best_fit_height"] = best_fit_height
+
+        resp = await self._request("GET", f"/files/{group}/{file_name_b64}", params=params or None)
+        return resp.content, resp.headers.get("Content-Type")
+
+    async def upload_file(self, group: str, file_name_b64: str, content: bytes) -> None:
+        await self._request(
+            "PUT",
+            f"/files/{group}/{file_name_b64}",
+            content=content,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+
+    async def delete_file(self, group: str, file_name_b64: str) -> None:
+        await self._request("DELETE", f"/files/{group}/{file_name_b64}")
+
+    # --- Print ---
+
+    async def print_stock_entry_label(self, entry_id: int) -> dict:
+        resp = await self._request("GET", f"/stock/entry/{entry_id}/printlabel")
+        return resp.json()
+
+    async def print_stock_product_label(self, product_id: int) -> dict:
+        resp = await self._request("GET", f"/stock/products/{product_id}/printlabel")
+        return resp.json()
+
+    async def print_recipe_label(self, recipe_id: int) -> dict:
+        resp = await self._request("GET", f"/recipes/{recipe_id}/printlabel")
+        return resp.json()
+
+    async def print_shopping_list_thermal(self) -> dict:
+        resp = await self._request("GET", "/print/shoppinglist/thermal")
+        return resp.json()
+
     # --- System ---
 
     async def get_system_info(self) -> dict:

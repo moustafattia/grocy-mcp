@@ -7,23 +7,25 @@ from grocy_mcp.client import GrocyClient
 
 async def tasks_list(client: GrocyClient, show_done: bool = False) -> str:
     """Return a formatted list of tasks."""
-    tasks = await client.get_objects("tasks")
-    if not show_done:
-        tasks = [t for t in tasks if not t.get("done")]
+    tasks = await client.get_objects("tasks") if show_done else await client.get_tasks()
+    if show_done:
+        tasks.sort(key=lambda task: (task.get("done", 0), task.get("due_date") or ""))
 
     if not tasks:
         return "No tasks found." if not show_done else "No tasks found (including completed)."
 
     label = "Tasks:" if not show_done else "Tasks (including completed):"
     lines = [label]
-    for t in tasks:
-        name = t.get("name", "?")
-        done = " (done)" if t.get("done") else ""
-        due = t.get("due_date")
+    for task in tasks:
+        name = task.get("name", "?")
+        done = " (done)" if task.get("done") else ""
+        due = task.get("due_date")
         due_str = f" — due: {due}" if due else ""
-        category_id = t.get("category_id")
+        category_id = task.get("category_id")
         cat_str = f" [cat:{category_id}]" if category_id else ""
-        lines.append(f"  [{t['id']}] {name}{done}{due_str}{cat_str}")
+        assignee = (task.get("assigned_to_user") or {}).get("display_name")
+        assign_str = f" — assigned to: {assignee}" if assignee else ""
+        lines.append(f"  [{task['id']}] {name}{done}{due_str}{cat_str}{assign_str}")
 
     return "\n".join(lines)
 
@@ -50,8 +52,14 @@ async def task_create(
 
 async def task_complete(client: GrocyClient, task_id: int) -> str:
     """Mark a task as done."""
-    await client.update_object("tasks", task_id, {"done": 1})
+    await client.complete_task(task_id)
     return f"Task {task_id} marked as done."
+
+
+async def task_undo(client: GrocyClient, task_id: int) -> str:
+    """Mark a task as not done."""
+    await client.undo_task(task_id)
+    return f"Task {task_id} marked as not done."
 
 
 async def task_delete(client: GrocyClient, task_id: int) -> str:

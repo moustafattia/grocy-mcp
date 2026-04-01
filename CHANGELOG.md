@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Workflow contracts**: stable preview/apply JSON schemas for chat- and vision-driven Grocy workflows
+- **Workflow tools**: product-match preview, stock-intake preview/apply, and shopping-reconcile preview/apply in both MCP and CLI surfaces
+- **Workflow design docs**: new current design doc describing the two-layer architecture and no-raw-image boundary
+- **Catalog surface**: first-class metadata access for shopping lists, shopping locations, quantity units, quantity-unit conversions, product groups, task categories, meal-plan sections, products-last-purchased, and products-average-price
+- **Batteries**: list/details, due and overdue views, charge-cycle history, charge and undo-cycle actions, plus create/update flows
+- **Equipment**: list/details/create/update with linked battery visibility
+- **Calendar helpers**: combined planning summary, iCal export, and sharing-link access
+- **Files**: scoped file-group download/upload/delete helpers for Grocy-managed files
+- **Print helpers**: stock-entry, product, recipe, chore, battery, and shopping-list thermal print triggers
+- **Discovery helpers**: candidate search, entity description, and field discovery for safer generic CRUD usage
+- **Support policy**: release checklist and compatibility guidance in `SUPPORT.md`
 - **Locations**: list and create storage locations (with freezer flag)
 - **Stock journal**: view recent stock transaction history, optionally filtered by product
 - **Tasks**: list, create, complete, and delete tasks (separate from chores)
@@ -31,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Roadmap rewritten as a checkpoint ledger with Track A/B/C execution slices and merge gates
+- Roadmap completed through CP16 with a finished coverage matrix
+- README updated to document workflow contracts, external LLM/image handoff, new CLI groups, and richer examples
+- Current design and implementation docs rewritten as the authoritative source of truth
 - MCP tool descriptions rewritten for AI agent readability with examples and cross-references
 - Output formatting standardized: consistent empty states, quoted names, bracket IDs, em-dash separators
 - Removed unused `client.search_products()` and `client.update_recipe()` methods

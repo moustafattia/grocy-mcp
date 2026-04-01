@@ -54,3 +54,11 @@ async def resolve_chore(client: GrocyClient, name_or_id: str) -> int:
 
 async def resolve_location(client: GrocyClient, name_or_id: str) -> int:
     return await resolve_entity(client, "locations", name_or_id)
+
+
+async def resolve_battery(client: GrocyClient, name_or_id: str) -> int:
+    return await resolve_entity(client, "batteries", name_or_id)
+
+
+async def resolve_equipment(client: GrocyClient, name_or_id: str) -> int:
+    return await resolve_entity(client, "equipment", name_or_id)

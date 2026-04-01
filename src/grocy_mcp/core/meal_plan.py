@@ -6,18 +6,28 @@ from grocy_mcp.client import GrocyClient
 from grocy_mcp.core.resolve import resolve_recipe
 
 
+def _meal_plan_section_id(entry: dict) -> int | None:
+    for field in ("meal_plan_section_id", "section_id"):
+        value = entry.get(field)
+        if value is not None:
+            return int(value)
+    return None
+
+
 async def meal_plan_list(client: GrocyClient) -> str:
     """Return a formatted list of meal plan entries."""
     entries = await client.get_objects("meal_plan")
     if not entries:
         return "No meal plan entries found."
 
-    # Build recipe name map
     recipes = await client.get_objects("recipes")
-    recipe_map = {r["id"]: r.get("name", f"Recipe {r['id']}") for r in recipes}
+    sections = await client.get_objects("meal_plan_sections")
+    recipe_map = {recipe["id"]: recipe.get("name", f"Recipe {recipe['id']}") for recipe in recipes}
+    section_map = {
+        section["id"]: section.get("name", f"Section {section['id']}") for section in sections
+    }
 
-    # Sort by day
-    entries.sort(key=lambda e: e.get("day", ""))
+    entries.sort(key=lambda entry: entry.get("day", ""))
 
     lines = ["Meal plan:"]
     for entry in entries:
@@ -26,12 +36,15 @@ async def meal_plan_list(client: GrocyClient) -> str:
         recipe_name = recipe_map.get(recipe_id, "")
         meal_type = entry.get("type", "")
         note = entry.get("note", "")
+        section_name = section_map.get(_meal_plan_section_id(entry))
 
         parts = [f"  [{entry['id']}] {day}"]
         if meal_type:
             parts.append(f"({meal_type})")
         if recipe_name:
             parts.append(f"— {recipe_name}")
+        if section_name:
+            parts.append(f"[{section_name}]")
         if note:
             parts.append(f"— {note}")
 
@@ -76,37 +89,96 @@ async def meal_plan_shopping(
     start_date: str | None = None,
     end_date: str | None = None,
 ) -> str:
-    """Add missing ingredients for all planned recipes to the shopping list.
-
-    Optionally filter by date range (YYYY-MM-DD). For each recipe in the meal
-    plan, calls Grocy's add-not-fulfilled endpoint to add only what's missing.
-    """
+    """Add missing ingredients for all planned recipes to the shopping list."""
     entries = await client.get_objects("meal_plan")
     if not entries:
         return "No meal plan entries found."
 
-    # Filter by date range
     if start_date:
-        entries = [e for e in entries if e.get("day", "") >= start_date]
+        entries = [entry for entry in entries if entry.get("day", "") >= start_date]
     if end_date:
-        entries = [e for e in entries if e.get("day", "") <= end_date]
+        entries = [entry for entry in entries if entry.get("day", "") <= end_date]
 
-    # Collect unique recipe IDs
-    recipe_ids = {e["recipe_id"] for e in entries if e.get("recipe_id")}
+    recipe_ids = {entry["recipe_id"] for entry in entries if entry.get("recipe_id")}
     if not recipe_ids:
         return "No recipes found in the selected meal plan entries."
 
-    # Build recipe name map
     recipes = await client.get_objects("recipes")
-    recipe_map = {r["id"]: r.get("name", f"Recipe {r['id']}") for r in recipes}
+    recipe_map = {recipe["id"]: recipe.get("name", f"Recipe {recipe['id']}") for recipe in recipes}
 
     added = []
-    for rid in sorted(recipe_ids):
-        await client.add_recipe_to_shopping_list(rid)
-        added.append(recipe_map.get(rid, f"Recipe {rid}"))
+    for recipe_id in sorted(recipe_ids):
+        await client.add_recipe_to_shopping_list(recipe_id)
+        added.append(recipe_map.get(recipe_id, f"Recipe {recipe_id}"))
 
     lines = [f"Added missing ingredients for {len(added)} recipe(s) to shopping list:"]
     for name in added:
         lines.append(f"  — {name}")
 
+    return "\n".join(lines)
+
+
+async def meal_plan_summary_data(
+    client: GrocyClient,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    section_id: int | None = None,
+) -> dict:
+    """Return a structured meal-plan summary with recipe and section names."""
+    entries = await client.get_objects("meal_plan")
+    recipes = await client.get_objects("recipes")
+    sections = await client.get_objects("meal_plan_sections")
+
+    if start_date:
+        entries = [entry for entry in entries if entry.get("day", "") >= start_date]
+    if end_date:
+        entries = [entry for entry in entries if entry.get("day", "") <= end_date]
+    if section_id is not None:
+        entries = [entry for entry in entries if _meal_plan_section_id(entry) == section_id]
+
+    recipe_map = {recipe["id"]: recipe.get("name", f"Recipe {recipe['id']}") for recipe in recipes}
+    section_map = {
+        section["id"]: section.get("name", f"Section {section['id']}") for section in sections
+    }
+
+    result_entries = []
+    for entry in sorted(entries, key=lambda item: (item.get("day", ""), item.get("id", 0))):
+        current_section_id = _meal_plan_section_id(entry)
+        result_entries.append(
+            {
+                **entry,
+                "recipe_name": recipe_map.get(entry.get("recipe_id")),
+                "section_name": section_map.get(current_section_id),
+            }
+        )
+
+    return {
+        "window": {"from": start_date, "to": end_date},
+        "section_id": section_id,
+        "entries": result_entries,
+    }
+
+
+async def meal_plan_summary(
+    client: GrocyClient,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    section_id: int | None = None,
+) -> str:
+    """Return a human-readable meal-plan summary."""
+    data = await meal_plan_summary_data(client, start_date, end_date, section_id)
+    entries = data["entries"]
+    if not entries:
+        return "No meal plan entries found for the selected window."
+
+    lines = ["Meal plan summary:"]
+    if start_date or end_date:
+        lines.append(f"  window: {start_date or 'open'} -> {end_date or 'open'}")
+    if section_id is not None:
+        lines.append(f"  section_id: {section_id}")
+    for entry in entries:
+        label = entry.get("recipe_name") or entry.get("note") or entry.get("type") or "entry"
+        section_name = entry.get("section_name")
+        section_suffix = f" [{section_name}]" if section_name else ""
+        lines.append(f"  [{entry.get('id')}] {entry.get('day')} — {label}{section_suffix}")
     return "\n".join(lines)

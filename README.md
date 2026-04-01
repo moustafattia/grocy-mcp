@@ -7,7 +7,7 @@
 
 Python MCP server and CLI for [Grocy](https://grocy.info/).
 
-`grocy-mcp` lets AI agents and terminal users work with Grocy through one shared codebase. It exposes stock, shopping lists, recipes, chores, and generic entity management through:
+`grocy-mcp` lets AI agents and terminal users work with Grocy through one shared codebase. It exposes stock, shopping lists, recipes, chores, batteries, equipment, calendar exports, file groups, print helpers, workflow preview/apply helpers, discovery tools, and generic entity management through:
 
 - an MCP server for tools like Claude Desktop, Claude Code, and other MCP clients
 - a `grocy` CLI for direct command-line use
@@ -29,13 +29,78 @@ Grocy already has a solid REST API, but most day-to-day interactions still requi
 
 ## Features
 
-- 30 MCP tools across stock, shopping, recipes, chores, and system operations
+- 89 MCP tools across stock, shopping, recipes, chores, locations, tasks, meal plans, batteries, equipment, calendar, files, print, discovery, workflow helpers, and system operations
 - Full Typer CLI with grouped subcommands under `grocy`
-- Name-based resolution for products, recipes, chores, and locations
+- Global `--json` mode for machine-readable output on the supported list/view/reporting commands
+- Top-level CLI config overrides via `--url` and `--api-key`
+- Name-based resolution for products, recipes, chores, locations, batteries, and equipment
+- Stable workflow-oriented JSON contracts for preview/apply flows driven by chat, OCR, or vision clients
+- Batch preview/apply helpers for product matching, stock intake, and shopping-list reconciliation
+- First-class catalog helpers for shopping metadata, quantity metadata, task categories, meal-plan sections, and price-history views
+- First-class household helpers for batteries, equipment, calendar summaries, file groups, print actions, and discovery
 - Streamable HTTP and stdio MCP transports
 - Async client layer with retry handling for transient server errors
 - Generic entity access for Grocy resources outside the dedicated commands
 - Test suite built with `pytest`, `pytest-asyncio`, and `respx`
+
+## Architecture split
+
+`grocy-mcp` intentionally stays on the Grocy side of the boundary.
+
+- This repo handles Grocy-aware matching, preview/apply flows, CLI commands, and MCP tools.
+- Raw images, OCR payloads, and model-specific prompting stay outside this repo.
+- ChatGPT, Claude, or another client should first turn receipts, photos, or chat into normalized JSON items, then call the workflow tools here.
+
+That keeps the project easier to test, safer for mutations, and usable by any model or automation stack.
+
+## Stable workflow contracts
+
+The workflow layer is designed for multi-step, confirmation-first flows.
+
+Normalized input items are used for preview only:
+
+```json
+{
+  "label": "whole milk",
+  "quantity": 2,
+  "unit_text": "cartons",
+  "barcode": "5000112637922",
+  "note": "organic"
+}
+```
+
+Preview results return `matched`, `ambiguous`, or `unmatched` plus candidate Grocy products:
+
+```json
+{
+  "input_index": 0,
+  "label": "whole milk",
+  "status": "matched",
+  "matched_product_id": 12,
+  "matched_product_name": "Whole Milk",
+  "candidates": [{"product_id": 12, "name": "Whole Milk"}],
+  "suggested_amount": 2,
+  "unit_text": "cartons"
+}
+```
+
+Apply steps accept explicit IDs only:
+
+```json
+{
+  "product_id": 12,
+  "amount": 2,
+  "note": "organic"
+}
+```
+
+Matching policy for preview tools:
+
+1. exact barcode match
+2. exact normalized product-name match
+3. case-insensitive substring match
+
+If a stage returns multiple plausible products, the result is `ambiguous` and should be confirmed before any apply step.
 
 ## Current status
 
@@ -130,6 +195,7 @@ The MCP server currently supports:
 
 - `stdio`
 - `streamable-http`
+- 89 registered tools in the current implementation
 
 ## Agent workflow examples
 
@@ -162,6 +228,88 @@ grocy-mcp tools together:
 2. `recipe_create_tool("Banana Bread", "Easy banana bread", '[{"product_id": 3, "amount": 2}, ...]')` — create the recipe
 3. `recipe_fulfillment_tool("Banana Bread")` — check if you can make it right away
 
+## Workflow-oriented chat and vision examples
+
+These flows use the workflow surface instead of asking an LLM to mutate Grocy directly.
+
+### Receipt text -> preview -> confirm -> apply
+
+1. External client extracts normalized items from a receipt:
+
+```json
+[
+  {"label": "whole milk", "quantity": 2, "unit_text": "cartons"},
+  {"label": "bananas", "quantity": 6},
+  {"label": "oat milk", "quantity": 1}
+]
+```
+
+2. Call `workflow_match_products_preview_tool(...)` or:
+
+```bash
+grocy --json workflow match-products-preview '[{"label":"whole milk","quantity":2},{"label":"bananas","quantity":6}]'
+```
+
+3. Confirm any `ambiguous` or `unmatched` lines with the user.
+4. Apply confirmed stock additions:
+
+```bash
+grocy --json workflow stock-intake-apply '[{"product_id":12,"amount":2},{"product_id":44,"amount":6}]'
+```
+
+5. Preview shopping reconciliation:
+
+```bash
+grocy --json workflow shopping-reconcile-preview '[{"product_id":12,"amount":2},{"product_id":44,"amount":6}]'
+```
+
+6. Apply only the explicit actions returned by the preview.
+
+### Grocery photo interpreted by an LLM -> preview -> confirm -> apply
+
+1. ChatGPT or Claude looks at a grocery-bag photo and produces normalized JSON items.
+2. Call `workflow_stock_intake_preview_tool(...)`.
+3. Review the proposed product matches and quantities.
+4. Confirm explicit `product_id` values.
+5. Call `workflow_stock_intake_apply_tool(...)`.
+
+### Pantry photo -> read-only audit preview
+
+1. External model describes visible pantry items as normalized JSON.
+2. Call `workflow_match_products_preview_tool(...)`.
+3. Use the preview as a read-only audit to compare what the model sees against Grocy product names.
+4. Do not apply anything until quantities and matches are confirmed.
+
+## Sample prompts for ChatGPT and Claude
+
+Use prompts like these outside `grocy-mcp` to produce normalized items before calling MCP/CLI workflow commands:
+
+```text
+Read this grocery receipt and return only JSON.
+Return an array of objects with:
+- label
+- quantity
+- unit_text
+- barcode
+- note
+Do not guess Grocy product IDs.
+If quantity is unclear, use 1.
+```
+
+```text
+Look at this grocery photo and list the likely purchased items as JSON only.
+Use this schema for each item:
+{"label":"string","quantity":number,"unit_text":"string|null","barcode":"string|null","note":"string|null"}
+Do not include commentary.
+Do not invent product IDs.
+```
+
+```text
+Look at this pantry photo and return the visible products as JSON only.
+Keep the output read-only and approximate if needed, but do not invent Grocy IDs.
+Use the same normalized item schema as above.
+```
+
 ## CLI usage
 
 Top-level command groups:
@@ -171,6 +319,17 @@ grocy stock ...
 grocy shopping ...
 grocy recipes ...
 grocy chores ...
+grocy locations ...
+grocy tasks ...
+grocy meal-plan ...
+grocy catalog ...
+grocy batteries ...
+grocy equipment ...
+grocy calendar ...
+grocy files ...
+grocy print ...
+grocy discover ...
+grocy workflow ...
 grocy system ...
 grocy entity ...
 ```
@@ -213,6 +372,30 @@ grocy chores execute "Vacuum living room" --done-by 1
 grocy chores undo "Vacuum living room"
 grocy chores create "Water plants"
 
+# Workflow
+grocy --json workflow match-products-preview '[{"label":"whole milk","quantity":2}]'
+grocy --json workflow stock-intake-preview '[{"label":"whole milk","quantity":2}]'
+grocy --json workflow stock-intake-apply '[{"product_id":12,"amount":2}]'
+grocy --json workflow shopping-reconcile-preview '[{"product_id":12,"amount":2}]'
+grocy --json workflow shopping-reconcile-apply '[{"shopping_item_id":5,"action":"remove"}]'
+
+# Catalog and planning
+grocy --json catalog list shopping-lists
+grocy --json catalog list quantity-units
+grocy --json batteries list
+grocy --json batteries due --days 7
+grocy --json equipment list
+grocy --json meal-plan summary --from 2026-04-01 --to 2026-04-07
+grocy --json calendar summary --from 2026-04-01 --to 2026-04-07
+
+# Files, print, and discovery
+grocy --json files download productpictures milk.jpg
+grocy files upload recipepictures pancakes.jpg ./pancakes.jpg
+grocy print shopping-list-thermal
+grocy print product-label Milk
+grocy --json discover search products milk
+grocy --json discover describe-entity products_average_price
+
 # System / generic entities
 grocy system info
 grocy entity list products
@@ -229,7 +412,14 @@ src/grocy_mcp/
   config.py          environment/config loading
   exceptions.py      typed error hierarchy
   models.py          pydantic models
+  workflow_models.py stable workflow JSON contracts
   core/              shared business logic for MCP and CLI
+  core/batteries.py  battery views and charge-cycle actions
+  core/calendar.py   combined planning summaries and iCal helpers
+  core/equipment.py  equipment views with linked battery context
+  core/files.py      file-group download/upload/delete and print helpers
+  core/reference_data.py first-class metadata/discovery helpers
+  core/workflows.py  preview/apply workflow helpers
   mcp/server.py      FastMCP entry point
   cli/app.py         Typer CLI entry point
 tests/
@@ -293,8 +483,10 @@ Claude Desktop logs for error details.
 
 - [Changelog](./CHANGELOG.md)
 - [Roadmap](./ROADMAP.md)
+- [Support policy](./SUPPORT.md)
 - [Contributing](./CONTRIBUTING.md)
 - [Design and implementation notes](./docs/specs/)
+- [Workflow design](./docs/specs/2026-04-01-grocy-mcp-workflow-design.md)
 
 ## Contributing
 

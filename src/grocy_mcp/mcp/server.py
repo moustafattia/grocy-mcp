@@ -12,12 +12,41 @@ from fastmcp import FastMCP
 from grocy_mcp.client import GrocyClient
 from grocy_mcp.config import load_config
 from grocy_mcp.exceptions import GrocyValidationError
+from grocy_mcp.core.batteries import (
+    batteries_due_data,
+    batteries_list_data,
+    batteries_overdue_data,
+    battery_charge,
+    battery_create,
+    battery_cycle_history_data,
+    battery_details_data,
+    battery_undo_cycle,
+    battery_update,
+)
+from grocy_mcp.core.calendar import calendar_ical_export, calendar_summary_data
 from grocy_mcp.core.chores import (
     chore_create,
     chore_execute,
     chore_undo,
     chores_list,
     chores_overdue,
+)
+from grocy_mcp.core.equipment import (
+    equipment_create,
+    equipment_details_data,
+    equipment_list_data,
+    equipment_update,
+)
+from grocy_mcp.core.files import (
+    file_delete,
+    file_download_data,
+    file_upload_data,
+    print_battery_label,
+    print_chore_label,
+    print_product_label,
+    print_recipe_label,
+    print_shopping_list_thermal,
+    print_stock_entry_label,
 )
 from grocy_mcp.core.recipes import (
     recipe_add_ingredient,
@@ -60,10 +89,26 @@ from grocy_mcp.core.meal_plan import (
     meal_plan_list,
     meal_plan_remove,
     meal_plan_shopping,
+    meal_plan_summary_data,
+)
+from grocy_mcp.core.reference_data import (
+    describe_entity_data,
+    discover_entity_fields_data,
+    entity_create_view,
+    entity_update_view,
+    list_entity_records,
+    search_entity_candidates_data,
 )
 from grocy_mcp.core.stock_journal import stock_journal
 from grocy_mcp.core.system import entity_list, entity_manage, system_info
-from grocy_mcp.core.tasks import task_complete, task_create, task_delete, tasks_list
+from grocy_mcp.core.tasks import task_complete, task_create, task_delete, task_undo, tasks_list
+from grocy_mcp.core.workflows import (
+    workflow_match_products_preview_data,
+    workflow_shopping_reconcile_apply_data,
+    workflow_shopping_reconcile_preview_data,
+    workflow_stock_intake_apply_data,
+    workflow_stock_intake_preview_data,
+)
 
 
 @asynccontextmanager
@@ -601,6 +646,16 @@ def create_mcp_server() -> FastMCP:
             return await task_complete(client, task_id)
 
     @mcp.tool()
+    async def task_undo_tool(task_id: int) -> str:
+        """Mark a task as not completed.
+
+        Args:
+            task_id: The task ID to undo.
+        """
+        async with _get_client() as client:
+            return await task_undo(client, task_id)
+
+    @mcp.tool()
     async def task_delete_tool(task_id: int) -> str:
         """Delete a task. This cannot be undone.
 
@@ -668,6 +723,340 @@ def create_mcp_server() -> FastMCP:
         """
         async with _get_client() as client:
             return await meal_plan_shopping(client, start_date, end_date)
+
+    @mcp.tool()
+    async def meal_plan_summary_tool(
+        start_date: str | None = None,
+        end_date: str | None = None,
+        section_id: int | None = None,
+    ) -> dict:
+        """Return a structured meal-plan summary with recipe and section names.
+
+        Args:
+            start_date: Optional start date filter in YYYY-MM-DD format.
+            end_date: Optional end date filter in YYYY-MM-DD format.
+            section_id: Optional meal-plan section filter.
+        """
+        async with _get_client() as client:
+            return await meal_plan_summary_data(client, start_date, end_date, section_id)
+
+    # ---------------------------------------------------------------- Catalog
+
+    @mcp.tool()
+    async def catalog_list_tool(entity: str, query: str | None = None) -> list[dict]:
+        """List first-class catalog and metadata entities.
+
+        Supported entities include shopping_lists, shopping_locations,
+        quantity_units, quantity_unit_conversions, product_groups,
+        task_categories, meal_plan_sections, products_last_purchased,
+        and products_average_price.
+        """
+        async with _get_client() as client:
+            return await list_entity_records(client, entity, query)
+
+    @mcp.tool()
+    async def catalog_details_tool(entity: str, obj_id: int) -> dict:
+        """Return details for a first-class catalog entity record."""
+        async with _get_client() as client:
+            return await client.get_object(entity, obj_id)
+
+    @mcp.tool()
+    async def catalog_create_tool(entity: str, data: str) -> str:
+        """Create a record in a writable first-class catalog entity."""
+        parsed_data = _parse_json_arg(data, "data")
+        async with _get_client() as client:
+            return await entity_create_view(client, entity, parsed_data)
+
+    @mcp.tool()
+    async def catalog_update_tool(entity: str, obj_id: int, data: str) -> str:
+        """Update a record in a writable first-class catalog entity."""
+        parsed_data = _parse_json_arg(data, "data")
+        async with _get_client() as client:
+            return await entity_update_view(client, entity, obj_id, parsed_data)
+
+    # -------------------------------------------------------------- Batteries
+
+    @mcp.tool()
+    async def batteries_list_tool() -> list[dict]:
+        """List batteries with next estimated charge times."""
+        async with _get_client() as client:
+            return await batteries_list_data(client)
+
+    @mcp.tool()
+    async def battery_details_tool(battery: str) -> dict:
+        """Return detailed information for a battery by name or ID."""
+        async with _get_client() as client:
+            return await battery_details_data(client, battery)
+
+    @mcp.tool()
+    async def batteries_due_tool(days: int = 7) -> list[dict]:
+        """Return batteries due within the next given number of days."""
+        async with _get_client() as client:
+            return await batteries_due_data(client, days)
+
+    @mcp.tool()
+    async def batteries_overdue_tool() -> list[dict]:
+        """Return batteries that are already overdue for charging."""
+        async with _get_client() as client:
+            return await batteries_overdue_data(client)
+
+    @mcp.tool()
+    async def battery_charge_tool(battery: str, tracked_time: str | None = None) -> str:
+        """Track a battery charge cycle."""
+        async with _get_client() as client:
+            return await battery_charge(client, battery, tracked_time)
+
+    @mcp.tool()
+    async def battery_history_tool(battery: str) -> list[dict]:
+        """Return charge-cycle history for a battery."""
+        async with _get_client() as client:
+            return await battery_cycle_history_data(client, battery)
+
+    @mcp.tool()
+    async def battery_undo_cycle_tool(cycle_id: int) -> str:
+        """Undo a tracked battery charge cycle."""
+        async with _get_client() as client:
+            return await battery_undo_cycle(client, cycle_id)
+
+    @mcp.tool()
+    async def battery_create_tool(
+        name: str,
+        used_in: str = "",
+        charge_interval_days: int = 0,
+        description: str = "",
+    ) -> str:
+        """Create a battery object."""
+        async with _get_client() as client:
+            return await battery_create(client, name, used_in, charge_interval_days, description)
+
+    @mcp.tool()
+    async def battery_update_tool(
+        battery: str,
+        name: str | None = None,
+        used_in: str | None = None,
+        charge_interval_days: int | None = None,
+        description: str | None = None,
+    ) -> str:
+        """Update a battery object."""
+        async with _get_client() as client:
+            return await battery_update(
+                client, battery, name, used_in, charge_interval_days, description
+            )
+
+    # -------------------------------------------------------------- Equipment
+
+    @mcp.tool()
+    async def equipment_list_tool() -> list[dict]:
+        """List equipment with linked battery visibility where available."""
+        async with _get_client() as client:
+            return await equipment_list_data(client)
+
+    @mcp.tool()
+    async def equipment_details_tool(equipment: str) -> dict:
+        """Return details for an equipment item by name or ID."""
+        async with _get_client() as client:
+            return await equipment_details_data(client, equipment)
+
+    @mcp.tool()
+    async def equipment_create_tool(
+        name: str,
+        description: str = "",
+        battery_id: int | None = None,
+    ) -> str:
+        """Create an equipment item."""
+        async with _get_client() as client:
+            return await equipment_create(client, name, description, battery_id)
+
+    @mcp.tool()
+    async def equipment_update_tool(
+        equipment: str,
+        name: str | None = None,
+        description: str | None = None,
+        battery_id: int | None = None,
+    ) -> str:
+        """Update an equipment item."""
+        async with _get_client() as client:
+            return await equipment_update(client, equipment, name, description, battery_id)
+
+    # --------------------------------------------------------------- Calendar
+
+    @mcp.tool()
+    async def calendar_summary_tool(
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> dict:
+        """Return a read-only planning summary across tasks, chores, batteries, and meal plan."""
+        async with _get_client() as client:
+            return await calendar_summary_data(client, start_date, end_date)
+
+    @mcp.tool()
+    async def calendar_ical_tool() -> dict:
+        """Return the raw Grocy iCal export."""
+        async with _get_client() as client:
+            return {"content": await calendar_ical_export(client)}
+
+    @mcp.tool()
+    async def calendar_sharing_link_tool() -> dict:
+        """Return the public Grocy iCal sharing link."""
+        async with _get_client() as client:
+            return await client.get_calendar_sharing_link()
+
+    # ------------------------------------------------------------------ Files
+
+    @mcp.tool()
+    async def file_download_tool(
+        group: str,
+        file_name: str,
+        force_picture: bool = False,
+        best_fit_width: int | None = None,
+        best_fit_height: int | None = None,
+    ) -> dict:
+        """Download a Grocy-managed file as base64 content."""
+        async with _get_client() as client:
+            return await file_download_data(
+                client, group, file_name, force_picture, best_fit_width, best_fit_height
+            )
+
+    @mcp.tool()
+    async def file_upload_tool(group: str, file_name: str, content_base64: str) -> dict:
+        """Upload a Grocy-managed file from base64 content."""
+        async with _get_client() as client:
+            return await file_upload_data(client, group, file_name, content_base64)
+
+    @mcp.tool()
+    async def file_delete_tool(group: str, file_name: str) -> str:
+        """Delete a Grocy-managed file."""
+        async with _get_client() as client:
+            return await file_delete(client, group, file_name)
+
+    # ------------------------------------------------------------------ Print
+
+    @mcp.tool()
+    async def print_stock_entry_label_tool(entry_id: int) -> str:
+        """Trigger printing of a stock-entry label."""
+        async with _get_client() as client:
+            return await print_stock_entry_label(client, entry_id)
+
+    @mcp.tool()
+    async def print_product_label_tool(product: str) -> str:
+        """Trigger printing of a product label."""
+        async with _get_client() as client:
+            return await print_product_label(client, product)
+
+    @mcp.tool()
+    async def print_recipe_label_tool(recipe: str) -> str:
+        """Trigger printing of a recipe label."""
+        async with _get_client() as client:
+            return await print_recipe_label(client, recipe)
+
+    @mcp.tool()
+    async def print_chore_label_tool(chore: str) -> str:
+        """Trigger printing of a chore label."""
+        async with _get_client() as client:
+            return await print_chore_label(client, chore)
+
+    @mcp.tool()
+    async def print_battery_label_tool(battery: str) -> str:
+        """Trigger printing of a battery label."""
+        async with _get_client() as client:
+            return await print_battery_label(client, battery)
+
+    @mcp.tool()
+    async def print_shopping_list_thermal_tool() -> str:
+        """Trigger thermal printing of the shopping list."""
+        async with _get_client() as client:
+            return await print_shopping_list_thermal(client)
+
+    # --------------------------------------------------------------- Discover
+
+    @mcp.tool()
+    async def discover_candidates_tool(entity: str, query: str, limit: int = 10) -> list[dict]:
+        """Search products, recipes, chores, locations, tasks, or supported metadata domains."""
+        async with _get_client() as client:
+            return await search_entity_candidates_data(client, entity, query, limit)
+
+    @mcp.tool()
+    async def describe_entity_tool(entity: str) -> dict:
+        """Describe a Grocy entity and its discovered fields."""
+        async with _get_client() as client:
+            return await describe_entity_data(client, entity)
+
+    @mcp.tool()
+    async def discover_fields_tool(entity: str) -> dict:
+        """Return discovered sample fields for a Grocy entity."""
+        async with _get_client() as client:
+            return await discover_entity_fields_data(client, entity)
+
+    # --------------------------------------------------------------- Workflow
+
+    @mcp.tool()
+    async def workflow_match_products_preview_tool(items: str) -> list[dict]:
+        """Preview product matches for normalized external items.
+
+        Use this when an LLM or another client has already converted a receipt,
+        chat message, or image into a normalized item list and you need Grocy
+        product IDs before applying stock changes.
+
+        Args:
+            items: JSON array of normalized input items.
+        """
+        parsed_items = _parse_json_arg(items, "items")
+        async with _get_client() as client:
+            return await workflow_match_products_preview_data(client, parsed_items)
+
+    @mcp.tool()
+    async def workflow_stock_intake_preview_tool(items: str) -> list[dict]:
+        """Preview Grocy stock additions for normalized external items.
+
+        This uses the same matching contract as workflow_match_products_preview_tool,
+        but is named for the common \"I bought these groceries\" workflow.
+
+        Args:
+            items: JSON array of normalized input items.
+        """
+        parsed_items = _parse_json_arg(items, "items")
+        async with _get_client() as client:
+            return await workflow_stock_intake_preview_data(client, parsed_items)
+
+    @mcp.tool()
+    async def workflow_stock_intake_apply_tool(items: str) -> dict:
+        """Apply confirmed stock additions using explicit Grocy product IDs.
+
+        Apply only confirmed IDs from a prior preview step. This tool does not
+        resolve names implicitly.
+
+        Args:
+            items: JSON array of confirmed apply items, each with product_id and amount.
+        """
+        parsed_items = _parse_json_arg(items, "items")
+        async with _get_client() as client:
+            return await workflow_stock_intake_apply_data(client, parsed_items)
+
+    @mcp.tool()
+    async def workflow_shopping_reconcile_preview_tool(items: str, list_id: int = 1) -> list[dict]:
+        """Preview shopping-list removals and amount updates after a purchase.
+
+        Provide confirmed Grocy product IDs for what was purchased and this tool
+        will propose explicit shopping-item actions without applying them.
+
+        Args:
+            items: JSON array of confirmed apply items, each with product_id and amount.
+            list_id: Shopping list ID to reconcile against.
+        """
+        parsed_items = _parse_json_arg(items, "items")
+        async with _get_client() as client:
+            return await workflow_shopping_reconcile_preview_data(client, parsed_items, list_id)
+
+    @mcp.tool()
+    async def workflow_shopping_reconcile_apply_tool(actions: str) -> dict:
+        """Apply explicit shopping-list reconciliation actions from a preview step.
+
+        Args:
+            actions: JSON array of action objects from workflow_shopping_reconcile_preview_tool.
+        """
+        parsed_actions = _parse_json_arg(actions, "actions")
+        async with _get_client() as client:
+            return await workflow_shopping_reconcile_apply_data(client, parsed_actions)
 
     # ----------------------------------------------------------------- System
 

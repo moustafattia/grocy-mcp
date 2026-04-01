@@ -20,6 +20,8 @@ async def test_meal_plan_list():
         ],
         # recipes
         [{"id": 1, "name": "Pancakes"}],
+        # sections
+        [],
     ]
     result = await meal_plan_list(client)
     assert "2026-04-05" in result

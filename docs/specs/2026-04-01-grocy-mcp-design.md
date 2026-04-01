@@ -1,92 +1,82 @@
 # grocy-mcp Design Spec
 
-**Date:** 2026-04-01
-**Status:** Current
+**Date:** 2026-04-01  
+**Status:** Authoritative current design
 
 ## Overview
 
-`grocy-mcp` is a Python package that exposes Grocy through two interfaces:
+`grocy-mcp` is a Python package that exposes Grocy through two aligned interfaces:
 
-- an MCP server for AI agents
-- a Typer CLI for human operators
+- an MCP server for AI agents and MCP-aware clients
+- a Typer CLI for direct operator use and shell automation
 
-Both interfaces share the same async core logic and the same HTTP client layer.
+The design goal is not to move LLM logic into this repository. The repository stays focused on Grocy-aware execution, preview/apply safety, and stable interfaces.
 
-## Goals
+## Core Design Principles
 
-- Provide one consistent integration surface for Grocy stock, shopping, recipes, chores, and system access.
-- Keep the MCP server and CLI behavior aligned by routing both through shared core functions.
-- Prefer human-friendly names over raw numeric IDs where possible.
-- Keep deployment simple: local stdio for MCP, HTTP transport when needed, and environment/config-file based configuration.
+- one shared implementation for MCP and CLI
+- human-friendly names instead of raw IDs where practical
+- structured JSON contracts for workflow-style preview/apply flows
+- read-only reporting surfaces before risky mutation surfaces for new domains
+- explicit separation between model interpretation and Grocy mutation
 
 ## Architecture
 
-The repository uses a three-layer design:
+The repository uses a layered design:
 
-1. `GrocyClient` in [client.py](C:/Workspace/grocy-mcp/src/grocy_mcp/client.py)
-   Handles async HTTP requests, auth headers, retries for transient upstream errors, and status-to-exception mapping.
-2. Core modules in [core](C:/Workspace/grocy-mcp/src/grocy_mcp/core)
-   Implement domain behavior and return human-readable strings for both interfaces.
-3. Interface layers in [server.py](C:/Workspace/grocy-mcp/src/grocy_mcp/mcp/server.py) and [app.py](C:/Workspace/grocy-mcp/src/grocy_mcp/cli/app.py)
-   Register MCP tools and CLI commands that delegate to the shared core layer.
+1. [client.py](C:/Workspace/grocy-mcp/src/grocy_mcp/client.py)  
+   Async HTTP client for Grocy. Handles auth headers, retries, direct API actions, file endpoints, calendar export, and print helpers.
 
-## Project Structure
+2. [core](C:/Workspace/grocy-mcp/src/grocy_mcp/core)  
+   Shared domain logic used by both interfaces. This layer includes:
+   - stock, shopping, recipes, chores, tasks, meal-plan
+   - workflow preview/apply helpers
+   - catalog/reference-data helpers
+   - batteries, equipment, calendar, files, and discovery helpers
 
-```text
-src/grocy_mcp/
-  client.py          async Grocy REST client
-  config.py          env/config-file loading
-  exceptions.py      typed domain and transport errors
-  models.py          pydantic models for Grocy entities
-  core/
-    resolve.py       name-to-ID resolution helpers
-    stock.py         stock operations
-    shopping.py      shopping-list operations
-    recipes.py       recipe operations
-    chores.py        chore operations
-    system.py        system and generic entity operations
-  mcp/server.py      FastMCP entry point and tool registration
-  cli/app.py         Typer CLI entry point and subcommands
-tests/
-  test_client.py
-  test_resolve.py
-  test_stock.py
-  test_shopping.py
-  test_recipes.py
-  test_chores.py
-  test_system.py
-  test_mcp.py
-  test_cli.py
-```
+3. [server.py](C:/Workspace/grocy-mcp/src/grocy_mcp/mcp/server.py) and [app.py](C:/Workspace/grocy-mcp/src/grocy_mcp/cli/app.py)  
+   Interface registration and transport-specific ergonomics.
 
-## Configuration Model
+## Workflow Boundary
 
-Current runtime configuration is loaded in this order:
+The workflow layer is intentionally external-model-friendly:
 
-1. explicit function arguments passed to `load_config()`
-2. environment variables: `GROCY_URL`, `GROCY_API_KEY`
-3. config file at the platform-specific `grocy-mcp/config.toml` path
+- raw images are not ingested in this repo
+- OCR extraction is not implemented in this repo
+- ChatGPT, Claude, or another client should first produce normalized JSON items
+- `grocy-mcp` then performs preview, matching, confirmation-safe apply, and follow-up Grocy actions
 
-Current CLI and MCP entry points rely on environment variables or the config file. They do not currently expose top-level `--url` or `--api-key` CLI flags.
+The workflow contracts are defined in [2026-04-01-grocy-mcp-workflow-design.md](C:/Workspace/grocy-mcp/docs/specs/2026-04-01-grocy-mcp-workflow-design.md).
 
 ## Interface Surface
 
 ### MCP
 
-The MCP server exposes 30 tools across these domains:
+The MCP server currently exposes 89 tools across:
 
 - stock
 - shopping
 - recipes
 - chores
-- system/entity management
+- locations
+- tasks
+- meal plan
+- catalog metadata
+- batteries
+- equipment
+- calendar
+- files
+- print
+- discovery
+- workflow preview/apply
+- system and generic entity management
 
-The server supports:
+Supported transports:
 
-- `stdio` transport
-- `streamable-http` transport
+- `stdio`
+- `streamable-http`
 
-Current HTTP defaults in [server.py](C:/Workspace/grocy-mcp/src/grocy_mcp/mcp/server.py):
+HTTP defaults:
 
 - host: `0.0.0.0`
 - port: `8000`
@@ -100,23 +90,25 @@ The CLI command groups are:
 - `shopping`
 - `recipes`
 - `chores`
+- `locations`
+- `tasks`
+- `meal-plan`
+- `catalog`
+- `batteries`
+- `equipment`
+- `calendar`
+- `files`
+- `print`
+- `discover`
+- `workflow`
 - `system`
 - `entity`
 
-Representative commands:
+The CLI supports:
 
-```text
-grocy stock overview
-grocy stock add Milk 2
-grocy shopping view --list-id 1
-grocy shopping add Butter --amount 3 --note "salted"
-grocy recipes details "Spaghetti Bolognese"
-grocy recipes add-to-shopping "Spaghetti Bolognese"
-grocy chores execute "Vacuum living room" --done-by 1
-grocy entity manage products create --data '{"name": "Oat Milk"}'
-```
-
-The CLI currently prints human-readable text returned by the core layer. It does not implement a global `--json` output mode.
+- global `--json` mode for supported list/view/reporting commands
+- top-level `--url` and `--api-key` config overrides
+- human-readable output by default
 
 ## Name Resolution
 
@@ -125,10 +117,10 @@ Name resolution lives in [resolve.py](C:/Workspace/grocy-mcp/src/grocy_mcp/core/
 Current behavior:
 
 - numeric strings are treated as IDs directly
-- otherwise the system fetches all entities of that type
+- otherwise all records of the target entity are fetched
 - case-insensitive substring matching is used
-- a single exact case-insensitive match wins when multiple substring matches exist
-- ambiguous matches raise `GrocyResolveError` with candidate names
+- a single exact case-insensitive match wins over broader substring matches
+- ambiguous matches raise `GrocyResolveError` with candidate labels
 
 Resolved entities currently include:
 
@@ -136,16 +128,36 @@ Resolved entities currently include:
 - recipes
 - chores
 - locations
+- batteries
+- equipment
+
+## First-Class vs Generic Coverage
+
+First-class support now covers:
+
+- day-to-day Grocy household domains
+- workflow preview/apply
+- catalog metadata and price-history views
+- calendar and file/print helpers
+- discovery helpers for safer generic CRUD
+
+Generic entity management remains for:
+
+- rarely used Grocy entities
+- historical or permission-oriented views
+- advanced userfield and userentity surfaces
 
 ## Error Handling
 
-The client maps Grocy/API failures to typed exceptions in [exceptions.py](C:/Workspace/grocy-mcp/src/grocy_mcp/exceptions.py):
+Typed exceptions in [exceptions.py](C:/Workspace/grocy-mcp/src/grocy_mcp/exceptions.py) remain the error boundary:
 
-- `401/403` -> `GrocyAuthError`
-- `400` -> `GrocyValidationError`
-- `404` -> `GrocyNotFoundError`
-- `5xx` and transport failures -> `GrocyServerError`
-- resolution failures -> `GrocyResolveError`
+- `GrocyAuthError`
+- `GrocyValidationError`
+- `GrocyNotFoundError`
+- `GrocyServerError`
+- `GrocyResolveError`
+
+Both CLI and MCP convert malformed JSON into explicit validation failures instead of leaking raw decoder errors.
 
 ## Testing Strategy
 
@@ -156,17 +168,19 @@ The repository uses:
 - `respx`
 - `typer.testing.CliRunner`
 
-Tests cover:
+Coverage includes:
 
-- client behavior and retries
-- name resolution
-- core business logic
-- MCP server entry behavior
+- client behavior
+- core domain behavior
+- workflow contracts
 - CLI command execution
+- MCP tool registration and structured output
+- opt-in live integration smoke tests against a real Grocy instance
 
-## Design Notes
+## Authoritative Documents
 
-- Shared core functions reduce behavior drift between MCP and CLI.
-- Core functions return strings, which keeps both interfaces simple and consistent.
-- The code favors straightforward request/response formatting over abstraction-heavy domain layers.
-- Generic entity operations provide flexibility for Grocy resources not covered by dedicated commands.
+The current source of truth is:
+
+- [2026-04-01-grocy-mcp-design.md](C:/Workspace/grocy-mcp/docs/specs/2026-04-01-grocy-mcp-design.md)
+- [2026-04-01-grocy-mcp-implementation.md](C:/Workspace/grocy-mcp/docs/specs/2026-04-01-grocy-mcp-implementation.md)
+- [2026-04-01-grocy-mcp-workflow-design.md](C:/Workspace/grocy-mcp/docs/specs/2026-04-01-grocy-mcp-workflow-design.md)
