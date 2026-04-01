@@ -31,6 +31,18 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: pytest -v
 
+  testbed:
+    runs-on: ubuntu-latest
+    env:
+      TESTBED_MANAGE_ENV: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e ".[dev]"
+      - run: python -m testbed.runners.run_suite pr
+
   build:
     runs-on: ubuntu-latest
     steps:

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420">
+  <rect width="720" height="420" fill="#f3ead7"/>
+  <rect x="60" y="50" width="600" height="300" fill="#8d6748" rx="14"/>
+  <rect x="95" y="95" width="530" height="18" fill="#d3b08a"/>
+  <rect x="95" y="200" width="530" height="18" fill="#d3b08a"/>
+  <text x="135" y="155" font-family="sans-serif" font-size="26" fill="#fff">Pasta</text>
+  <text x="280" y="155" font-family="sans-serif" font-size="26" fill="#fff">Rice</text>
+  <text x="410" y="155" font-family="sans-serif" font-size="26" fill="#fff">Tomato Sauce</text>
+  <text x="170" y="260" font-family="sans-serif" font-size="26" fill="#fff">Olive Oil</text>
+  <text x="355" y="260" font-family="sans-serif" font-size="26" fill="#fff">Cereal</text>
+</svg>
+

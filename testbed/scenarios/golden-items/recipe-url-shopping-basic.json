@@ -1,0 +1,7 @@
+[
+  {"label": "flour", "quantity": 300, "unit_text": "gram"},
+  {"label": "eggs", "quantity": 2, "unit_text": "piece"},
+  {"label": "whole milk", "quantity": 1, "unit_text": "carton"},
+  {"label": "butter", "quantity": 1, "unit_text": "pack"}
+]
+

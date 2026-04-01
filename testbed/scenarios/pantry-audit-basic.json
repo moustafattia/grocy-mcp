@@ -1,0 +1,14 @@
+{
+  "id": "pantry-audit-basic",
+  "description": "Read-only pantry audit against a frozen pantry illustration.",
+  "seed_profile": "seed/demo_profile.json",
+  "task_type": "pantry_audit",
+  "input_asset": "fixtures/pantry-audit-basic/pantry.svg",
+  "source_metadata": {},
+  "golden_items_path": "scenarios/golden-items/pantry-audit-basic.json",
+  "confirmation_path": "scenarios/confirmations/pantry-audit-basic.json",
+  "expected_outcome_path": "scenarios/expected/pantry-audit-basic.json",
+  "supported_modes": ["cli", "mcp"],
+  "supported_sources": ["golden", "openai", "anthropic", "openai_compatible"]
+}
+

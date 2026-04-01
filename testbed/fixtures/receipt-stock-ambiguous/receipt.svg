@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <rect width="640" height="360" fill="#f6f1e8"/>
+  <rect x="95" y="20" width="450" height="320" rx="10" fill="#fffdf9" stroke="#2f2a24" stroke-width="2"/>
+  <text x="320" y="60" text-anchor="middle" font-family="monospace" font-size="28" fill="#2f2a24">SMALL RECEIPT</text>
+  <text x="130" y="125" font-family="monospace" font-size="22" fill="#2f2a24">1 x Milk</text>
+  <text x="130" y="170" font-family="monospace" font-size="22" fill="#2f2a24">1 x Oat Milk</text>
+  <text x="130" y="245" font-family="monospace" font-size="18" fill="#6a6155">The first line is intentionally ambiguous.</text>
+</svg>
+

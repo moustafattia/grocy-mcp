@@ -1,0 +1,6 @@
+Read the provided pantry image or pantry illustration content and return only a JSON array.
+Use this schema for each item:
+{"label":"string","quantity":number,"unit_text":"string|null","barcode":"string|null","note":"string|null"}
+This is a read-only audit prompt, so do not guess Grocy product IDs.
+If quantity is uncertain, use 1.
+

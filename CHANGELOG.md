@@ -9,7 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Nothing yet.
+- **Testbed layer**: in-repo `testbed/` package for deterministic and provider-backed end-to-end Grocy workflow validation
+- **Demo environment tooling**: disposable Grocy Compose stack, seed profile, reset/bootstrap scripts, and local auth shim for CLI/MCP validation
+- **Scenario assets**: frozen receipt, pantry, and recipe fixtures with golden normalized JSON, confirmation files, and expected outcome assertions
+- **Automation**: CI and release workflow hooks for deterministic PR suites plus scheduled/manual model-backed runs
 
 ## [0.2.0] - 2026-04-01
 

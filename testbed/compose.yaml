@@ -1,0 +1,13 @@
+services:
+  grocy:
+    image: lscr.io/linuxserver/grocy:4.4.1
+    container_name: grocy-mcp-testbed
+    ports:
+      - "9283:80"
+    environment:
+      PUID: "${TESTBED_PUID:-1000}"
+      PGID: "${TESTBED_PGID:-1000}"
+      TZ: "UTC"
+    volumes:
+      - ./runtime/grocy-data:/config
+    restart: "no"

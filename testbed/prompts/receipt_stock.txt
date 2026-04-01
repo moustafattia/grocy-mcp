@@ -1,0 +1,7 @@
+Read the provided grocery receipt content and return only a JSON array.
+Use this schema for each item:
+{"label":"string","quantity":number,"unit_text":"string|null","barcode":"string|null","note":"string|null"}
+Do not invent Grocy product IDs.
+If quantity is unclear, use 1.
+Normalize obvious grocery labels but preserve the user's likely meaning.
+
