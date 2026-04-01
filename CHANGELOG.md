@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Nothing yet.
+
+## [0.2.0] - 2026-04-01
+
+### Added
+
 - **Workflow contracts**: stable preview/apply JSON schemas for chat- and vision-driven Grocy workflows
 - **Workflow tools**: product-match preview, stock-intake preview/apply, and shopping-reconcile preview/apply in both MCP and CLI surfaces
 - **Workflow design docs**: new current design doc describing the two-layer architecture and no-raw-image boundary

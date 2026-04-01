@@ -104,7 +104,7 @@ If a stage returns multiple plausible products, the result is `ambiguous` and sh
 
 ## Current status
 
-This project is in active development and currently published as version `0.1.1`.
+This project is in active development. The current release target is `0.2.0`.
 
 - Python: `3.11+`
 - Grocy: `v4.4.1+`
