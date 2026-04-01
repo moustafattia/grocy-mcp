@@ -165,3 +165,107 @@ def test_shopping_view_with_list_id():
 
     assert result.exit_code == 0
     mock_view.assert_awaited_once_with(mock_client, 3)
+
+
+# ---------------------------------------------------------------- --json flag
+
+
+def test_stock_overview_json_output():
+    """--json flag should call the client directly and output JSON."""
+    with patch("grocy_mcp.cli.app._client") as mock_client_factory:
+        mock_client = MagicMock()
+        mock_client.get_stock = AsyncMock(return_value=[{"product_id": 1, "amount": 3}])
+        mock_client_factory.return_value.__aenter__.return_value = mock_client
+        result = runner.invoke(app, ["--json", "stock", "overview"])
+
+    assert result.exit_code == 0
+    import json
+    data = json.loads(result.output)
+    assert isinstance(data, list)
+    assert data[0]["product_id"] == 1
+
+
+def test_shopping_view_json_output():
+    """--json flag should output raw shopping list data."""
+    with patch("grocy_mcp.cli.app._client") as mock_client_factory:
+        mock_client = MagicMock()
+        mock_client.get_shopping_list = AsyncMock(
+            return_value=[{"id": 1, "product_id": 2, "amount": 3}]
+        )
+        mock_client_factory.return_value.__aenter__.return_value = mock_client
+        result = runner.invoke(app, ["--json", "shopping", "view"])
+
+    assert result.exit_code == 0
+    import json
+    data = json.loads(result.output)
+    assert data[0]["id"] == 1
+
+
+# -------------------------------------------------------------- --url / --api-key
+
+
+def test_url_and_api_key_flags():
+    """--url and --api-key should be forwarded to load_config."""
+    with patch("grocy_mcp.cli.app.stock_overview", new_callable=AsyncMock) as mock_fn:
+        mock_fn.return_value = "ok"
+        with patch("grocy_mcp.cli.app.load_config") as mock_config:
+            mock_config.return_value = MagicMock(url="http://test", api_key="key")
+            with patch("grocy_mcp.cli.app.GrocyClient") as mock_gc:
+                mock_gc_instance = MagicMock()
+                mock_gc.return_value.__aenter__.return_value = mock_gc_instance
+                result = runner.invoke(
+                    app,
+                    ["--url", "http://my-grocy", "--api-key", "secret123", "stock", "overview"],
+                )
+
+    assert result.exit_code == 0
+    mock_config.assert_called_once_with(url="http://my-grocy", api_key="secret123")
+
+
+# --------------------------------------------------------- JSON validation errors
+
+
+def test_shopping_update_invalid_json():
+    """Malformed JSON should produce a clear error and exit code 2."""
+    result = runner.invoke(app, ["shopping", "update", "1", "not-json"])
+    assert result.exit_code == 2
+    assert "invalid JSON" in result.output
+
+
+def test_entity_manage_invalid_json():
+    """Malformed --data JSON should produce a clear error."""
+    result = runner.invoke(
+        app, ["entity", "manage", "products", "create", "--data", "{bad"]
+    )
+    assert result.exit_code == 2
+    assert "invalid JSON" in result.output
+
+
+def test_recipe_create_invalid_ingredients_json():
+    """Malformed --ingredients JSON should produce a clear error."""
+    result = runner.invoke(
+        app, ["recipes", "create", "Test", "--ingredients", "[broken"]
+    )
+    assert result.exit_code == 2
+    assert "invalid JSON" in result.output
+
+
+# ------------------------------------------------------------ short option flags
+
+
+def test_shopping_add_short_flags():
+    """Short flags -a, -l, -n should work for shopping add."""
+    with patch(
+        "grocy_mcp.cli.app.shopping_list_add", new_callable=AsyncMock
+    ) as mock_add:
+        mock_add.return_value = "ok"
+        with patch("grocy_mcp.cli.app._client") as mock_client_factory:
+            mock_client = MagicMock()
+            mock_client_factory.return_value.__aenter__.return_value = mock_client
+            result = runner.invoke(
+                app,
+                ["shopping", "add", "Milk", "-a", "2", "-l", "3", "-n", "organic"],
+            )
+
+    assert result.exit_code == 0
+    mock_add.assert_awaited_once_with(mock_client, "Milk", 2.0, 3, "organic")
