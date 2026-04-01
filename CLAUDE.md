@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**grocy-mcp** is an MCP (Model Context Protocol) server and CLI for controlling [Grocy](https://grocy.info/), a self-hosted pantry/household management system. It exposes 30 MCP tools for stock management, shopping lists, recipes, chores, and entity CRUD — usable by AI agents via stdio/HTTP transport or directly via CLI.
+**grocy-mcp** is an MCP (Model Context Protocol) server and CLI for controlling [Grocy](https://grocy.info/), a self-hosted pantry/household management system. It currently exposes about 50 MCP tools across stock management, shopping lists, recipes, chores, locations, tasks, meal planning, and entity CRUD — usable by AI agents via stdio/HTTP transport or directly via CLI.
 
 ## Tech Stack
 
@@ -29,8 +29,12 @@ src/grocy_mcp/
 ├── core/                # Business logic (transport-independent)
 │   ├── stock.py         # Stock operations (add, consume, transfer, search, etc.)
 │   ├── shopping.py      # Shopping list management
-│   ├── recipes.py       # Recipe listing, fulfillment, creation
+│   ├── recipes.py       # Recipe listing, fulfillment, creation, editing
 │   ├── chores.py        # Chore tracking and execution
+│   ├── locations.py     # Storage location listing and creation
+│   ├── tasks.py         # Task management
+│   ├── meal_plan.py     # Meal plan management and shopping workflow
+│   ├── stock_journal.py # Stock history / transaction log
 │   ├── system.py        # System info and generic entity CRUD
 │   └── resolve.py       # Name-to-ID resolution for products, recipes, etc.
 └── mcp/
@@ -74,14 +78,14 @@ grocy-mcp --transport streamable-http --host 0.0.0.0 --port 8000
 
 # Run CLI
 grocy stock overview
-grocy shopping list
+grocy shopping view
 ```
 
 ## Architecture
 
 **Dual interface, shared core logic:**
 
-1. **`core/`** — Pure business logic modules. Each function takes a `GrocyClient` and returns structured data. No transport coupling.
+1. **`core/`** — Shared business logic modules. Each function takes a `GrocyClient` and usually returns formatted human-readable text for both CLI and MCP use. Some CLI `--json` paths call the client layer directly or compose structured data in the CLI.
 2. **`mcp/server.py`** — FastMCP tool definitions that call into `core/` modules. Each tool creates a `GrocyClient` from config, calls core logic, and formats the response as a string.
 3. **`cli/app.py`** — Typer commands that call into `core/` modules. Same pattern: create client, call core, print output.
 4. **`client.py`** — Async HTTP wrapper over the Grocy REST API with retry logic and error mapping.

@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import datetime, timezone
 
 import typer
 
 from grocy_mcp.client import GrocyClient
 from grocy_mcp.config import load_config
 from grocy_mcp.core.chores import (
+    _parse_datetime,
     chore_create,
     chore_execute,
     chore_undo,
@@ -57,6 +59,7 @@ from grocy_mcp.core.meal_plan import (
     meal_plan_remove,
     meal_plan_shopping,
 )
+from grocy_mcp.core.resolve import resolve_product, resolve_recipe
 from grocy_mcp.core.stock_journal import stock_journal
 from grocy_mcp.core.system import entity_list, entity_manage, system_info
 from grocy_mcp.core.tasks import task_complete, task_create, task_delete, tasks_list
@@ -130,6 +133,61 @@ def _parse_json(value: str, label: str) -> dict | list:
     except json.JSONDecodeError as e:
         typer.echo(f"Error: invalid JSON for {label}: {e}", err=True)
         raise typer.Exit(2) from e
+
+
+async def _stock_search_json(client: GrocyClient, query: str) -> list[dict]:
+    """Return stock search matches as raw JSON-friendly product objects."""
+    products = await client.get_objects("products")
+    query_lower = query.lower()
+    matches = [p for p in products if query_lower in p.get("name", "").lower()]
+
+    barcodes = await client.get_objects("product_barcodes")
+    barcode_ids = {b["product_id"] for b in barcodes if query_lower in b.get("barcode", "").lower()}
+    for product in products:
+        if product["id"] in barcode_ids and product not in matches:
+            matches.append(product)
+
+    return matches
+
+
+async def _recipe_details_json(client: GrocyClient, recipe: str) -> dict:
+    """Return recipe details plus ingredient positions for JSON output."""
+    recipe_id = await resolve_recipe(client, recipe)
+    recipe_data = await client.get_recipe(recipe_id)
+    positions = await client.get_objects("recipes_pos")
+    recipe_data["ingredients"] = [p for p in positions if p.get("recipe_id") == recipe_id]
+    return recipe_data
+
+
+async def _chores_overdue_json(client: GrocyClient) -> list[dict]:
+    """Return only overdue chores for JSON output."""
+    chores = await client.get_chores()
+    now = datetime.now(tz=timezone.utc)
+    return [
+        entry
+        for entry in chores
+        if (next_exec := _parse_datetime(entry.get("next_estimated_execution_time")))
+        and next_exec < now
+    ]
+
+
+async def _stock_journal_json(client: GrocyClient, product: str | None = None) -> list[dict]:
+    """Return stock journal entries sorted newest-first, optionally filtered by product."""
+    entries = await client.get_objects("stock_log")
+    if product is not None:
+        product_id = await resolve_product(client, product)
+        entries = [e for e in entries if e.get("product_id") == product_id]
+
+    entries.sort(key=lambda e: e.get("row_created_timestamp", ""), reverse=True)
+    return entries[:50]
+
+
+async def _tasks_list_json(client: GrocyClient, show_done: bool) -> list[dict]:
+    """Return raw task objects while preserving the CLI's done-filter semantics."""
+    tasks = await client.get_objects("tasks")
+    if show_done:
+        return tasks
+    return [task for task in tasks if not task.get("done")]
 
 
 @app.callback()
@@ -275,6 +333,14 @@ def cmd_stock_open(
 @stock_app.command("search", rich_help_panel="View")
 def cmd_stock_search(query: str = typer.Argument(..., help="Search query.")) -> None:
     """Search for products by name or barcode."""
+    if _output_json:
+
+        async def _inner():
+            async with _client() as client:
+                return await _stock_search_json(client, query)
+
+        _exec_json(_inner())
+        return
 
     async def _inner():
         async with _client() as client:
@@ -288,6 +354,14 @@ def cmd_stock_barcode_lookup(
     barcode: str = typer.Argument(..., help="Barcode to look up."),
 ) -> None:
     """Look up stock information by barcode."""
+    if _output_json:
+
+        async def _inner():
+            async with _client() as client:
+                return await client.get_stock_by_barcode(barcode)
+
+        _exec_json(_inner())
+        return
 
     async def _inner():
         async with _client() as client:
@@ -443,6 +517,14 @@ def cmd_recipes_list() -> None:
 @recipes_app.command("details")
 def cmd_recipe_details(recipe: str = typer.Argument(..., help="Recipe name or ID.")) -> None:
     """Show details and ingredients for a recipe."""
+    if _output_json:
+
+        async def _inner():
+            async with _client() as client:
+                return await _recipe_details_json(client, recipe)
+
+        _exec_json(_inner())
+        return
 
     async def _inner():
         async with _client() as client:
@@ -454,6 +536,15 @@ def cmd_recipe_details(recipe: str = typer.Argument(..., help="Recipe name or ID
 @recipes_app.command("fulfillment")
 def cmd_recipe_fulfillment(recipe: str = typer.Argument(..., help="Recipe name or ID.")) -> None:
     """Check if a recipe can be fulfilled with current stock."""
+    if _output_json:
+
+        async def _inner():
+            async with _client() as client:
+                recipe_id = await resolve_recipe(client, recipe)
+                return await client.get_recipe_fulfillment(recipe_id)
+
+        _exec_json(_inner())
+        return
 
     async def _inner():
         async with _client() as client:
@@ -588,6 +679,14 @@ def cmd_chores_list() -> None:
 @chores_app.command("overdue")
 def cmd_chores_overdue() -> None:
     """Show overdue chores."""
+    if _output_json:
+
+        async def _inner():
+            async with _client() as client:
+                return await _chores_overdue_json(client)
+
+        _exec_json(_inner())
+        return
 
     async def _inner():
         async with _client() as client:
@@ -677,6 +776,14 @@ def cmd_stock_journal(
     product: str | None = typer.Argument(None, help="Optional product name or ID to filter by."),
 ) -> None:
     """View recent stock transaction history."""
+    if _output_json:
+
+        async def _inner():
+            async with _client() as client:
+                return await _stock_journal_json(client, product)
+
+        _exec_json(_inner())
+        return
 
     async def _inner():
         async with _client() as client:
@@ -697,7 +804,7 @@ def cmd_tasks_list(
 
         async def _inner():
             async with _client() as client:
-                return await client.get_objects("tasks")
+                return await _tasks_list_json(client, show_done)
 
         _exec_json(_inner())
     else:

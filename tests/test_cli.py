@@ -203,6 +203,119 @@ def test_shopping_view_json_output():
     assert data[0]["id"] == 1
 
 
+def test_stock_search_json_output():
+    """--json stock search should return matching product objects."""
+    with patch("grocy_mcp.cli.app._client") as mock_client_factory:
+        mock_client = MagicMock()
+        mock_client.get_objects = AsyncMock(
+            side_effect=[
+                [{"id": 1, "name": "Milk"}, {"id": 2, "name": "Bread"}],
+                [{"id": 10, "product_id": 1, "barcode": "123milk"}],
+            ]
+        )
+        mock_client_factory.return_value.__aenter__.return_value = mock_client
+        result = runner.invoke(app, ["--json", "stock", "search", "milk"])
+
+    assert result.exit_code == 0
+    import json
+
+    data = json.loads(result.output)
+    assert data == [{"id": 1, "name": "Milk"}]
+
+
+def test_recipe_details_json_output():
+    """--json recipe details should return recipe data with ingredients."""
+    with patch("grocy_mcp.cli.app.resolve_recipe", new_callable=AsyncMock) as mock_resolve:
+        mock_resolve.return_value = 5
+        with patch("grocy_mcp.cli.app._client") as mock_client_factory:
+            mock_client = MagicMock()
+            mock_client.get_recipe = AsyncMock(return_value={"id": 5, "name": "Pancakes"})
+            mock_client.get_objects = AsyncMock(
+                return_value=[
+                    {"id": 1, "recipe_id": 5, "product_id": 2, "amount": 3},
+                    {"id": 2, "recipe_id": 9, "product_id": 4, "amount": 1},
+                ]
+            )
+            mock_client_factory.return_value.__aenter__.return_value = mock_client
+            result = runner.invoke(app, ["--json", "recipes", "details", "Pancakes"])
+
+    assert result.exit_code == 0
+    import json
+
+    data = json.loads(result.output)
+    assert data["id"] == 5
+    assert data["ingredients"] == [{"id": 1, "recipe_id": 5, "product_id": 2, "amount": 3}]
+
+
+def test_chores_overdue_json_output():
+    """--json chores overdue should return only overdue entries."""
+    with patch("grocy_mcp.cli.app._client") as mock_client_factory:
+        mock_client = MagicMock()
+        mock_client.get_chores = AsyncMock(
+            return_value=[
+                {
+                    "chore_id": 1,
+                    "next_estimated_execution_time": "2000-01-01 00:00:00",
+                    "chore": {"name": "Vacuum"},
+                },
+                {
+                    "chore_id": 2,
+                    "next_estimated_execution_time": "2999-01-01 00:00:00",
+                    "chore": {"name": "Dust"},
+                },
+            ]
+        )
+        mock_client_factory.return_value.__aenter__.return_value = mock_client
+        result = runner.invoke(app, ["--json", "chores", "overdue"])
+
+    assert result.exit_code == 0
+    import json
+
+    data = json.loads(result.output)
+    assert len(data) == 1
+    assert data[0]["chore_id"] == 1
+
+
+def test_stock_journal_json_output():
+    """--json stock journal should return newest-first entries."""
+    with patch("grocy_mcp.cli.app._client") as mock_client_factory:
+        mock_client = MagicMock()
+        mock_client.get_objects = AsyncMock(
+            return_value=[
+                {"id": 1, "product_id": 1, "row_created_timestamp": "2026-04-01 10:00:00"},
+                {"id": 2, "product_id": 1, "row_created_timestamp": "2026-04-01 12:00:00"},
+            ]
+        )
+        mock_client_factory.return_value.__aenter__.return_value = mock_client
+        result = runner.invoke(app, ["--json", "stock", "journal"])
+
+    assert result.exit_code == 0
+    import json
+
+    data = json.loads(result.output)
+    assert [entry["id"] for entry in data] == [2, 1]
+
+
+def test_tasks_list_json_hides_done_by_default():
+    """--json tasks list should preserve the default incomplete-only behavior."""
+    with patch("grocy_mcp.cli.app._client") as mock_client_factory:
+        mock_client = MagicMock()
+        mock_client.get_objects = AsyncMock(
+            return_value=[
+                {"id": 1, "name": "Open task", "done": 0},
+                {"id": 2, "name": "Done task", "done": 1},
+            ]
+        )
+        mock_client_factory.return_value.__aenter__.return_value = mock_client
+        result = runner.invoke(app, ["--json", "tasks", "list"])
+
+    assert result.exit_code == 0
+    import json
+
+    data = json.loads(result.output)
+    assert data == [{"id": 1, "name": "Open task", "done": 0}]
+
+
 # -------------------------------------------------------------- --url / --api-key
 
 
