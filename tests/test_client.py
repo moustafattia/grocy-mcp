@@ -43,9 +43,7 @@ async def test_create_object(client, mock_api):
 
 
 async def test_delete_object(client, mock_api):
-    mock_api.delete("/objects/products/1").mock(
-        return_value=httpx.Response(204)
-    )
+    mock_api.delete("/objects/products/1").mock(return_value=httpx.Response(204))
     await client.delete_object("products", 1)
 
 
@@ -58,9 +56,7 @@ async def test_get_stock(client, mock_api):
 
 
 async def test_add_stock(client, mock_api):
-    mock_api.post("/stock/products/1/add").mock(
-        return_value=httpx.Response(200, json=[{"id": 10}])
-    )
+    mock_api.post("/stock/products/1/add").mock(return_value=httpx.Response(200, json=[{"id": 10}]))
     result = await client.add_stock(1, 2.0)
     assert result is not None
 
@@ -74,10 +70,15 @@ async def test_consume_stock(client, mock_api):
 
 async def test_get_volatile_stock(client, mock_api):
     mock_api.get("/stock/volatile").mock(
-        return_value=httpx.Response(200, json={
-            "expiring_products": [], "expired_products": [],
-            "missing_products": [], "overdue_products": []
-        })
+        return_value=httpx.Response(
+            200,
+            json={
+                "expiring_products": [],
+                "expired_products": [],
+                "missing_products": [],
+                "overdue_products": [],
+            },
+        )
     )
     result = await client.get_volatile_stock()
     assert "expiring_products" in result
@@ -90,7 +91,9 @@ async def test_auth_error(client, mock_api):
 
 
 async def test_validation_error(client, mock_api):
-    mock_api.post("/objects/products").mock(return_value=httpx.Response(400, json={"error_message": "bad"}))
+    mock_api.post("/objects/products").mock(
+        return_value=httpx.Response(400, json={"error_message": "bad"})
+    )
     with pytest.raises(GrocyValidationError):
         await client.create_object("products", {})
 

@@ -40,8 +40,17 @@ def test_main_http_custom_args(monkeypatch):
     monkeypatch.setattr("grocy_mcp.mcp.server.create_mcp_server", lambda: server)
     monkeypatch.setattr(
         "sys.argv",
-        ["grocy-mcp", "--transport", "streamable-http",
-         "--host", "127.0.0.1", "--port", "9193", "--path", "/private_abc"],
+        [
+            "grocy-mcp",
+            "--transport",
+            "streamable-http",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "9193",
+            "--path",
+            "/private_abc",
+        ],
     )
     main()
     server.run.assert_called_once_with(

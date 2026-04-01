@@ -11,7 +11,13 @@ from fastmcp import FastMCP
 
 from grocy_mcp.client import GrocyClient
 from grocy_mcp.config import load_config
-from grocy_mcp.core.chores import chore_create, chore_execute, chore_undo, chores_list, chores_overdue
+from grocy_mcp.core.chores import (
+    chore_create,
+    chore_execute,
+    chore_undo,
+    chores_list,
+    chores_overdue,
+)
 from grocy_mcp.core.recipes import (
     recipe_add_ingredient,
     recipe_add_to_shopping,
@@ -48,7 +54,12 @@ from grocy_mcp.core.stock import (
     stock_transfer,
 )
 from grocy_mcp.core.locations import location_create, locations_list
-from grocy_mcp.core.meal_plan import meal_plan_add, meal_plan_list, meal_plan_remove, meal_plan_shopping
+from grocy_mcp.core.meal_plan import (
+    meal_plan_add,
+    meal_plan_list,
+    meal_plan_remove,
+    meal_plan_shopping,
+)
 from grocy_mcp.core.stock_journal import stock_journal
 from grocy_mcp.core.system import entity_list, entity_manage, system_info
 from grocy_mcp.core.tasks import task_complete, task_create, task_delete, tasks_list
@@ -353,9 +364,7 @@ def create_mcp_server() -> FastMCP:
             return await recipe_add_to_shopping(client, recipe)
 
     @mcp.tool()
-    async def recipe_create_tool(
-        name: str, description: str = "", ingredients: str = "[]"
-    ) -> str:
+    async def recipe_create_tool(name: str, description: str = "", ingredients: str = "[]") -> str:
         """Create a new recipe in Grocy.
 
         Args:
@@ -409,9 +418,7 @@ def create_mcp_server() -> FastMCP:
             return await recipe_update(client, recipe, name, description)
 
     @mcp.tool()
-    async def recipe_add_ingredient_tool(
-        recipe: str, product: str, amount: float = 1.0
-    ) -> str:
+    async def recipe_add_ingredient_tool(recipe: str, product: str, amount: float = 1.0) -> str:
         """Add an ingredient to an existing recipe using the product name.
 
         Args:

@@ -47,25 +47,19 @@ async def shopping_list_add(
     return f"Added {amount} of '{product}' to shopping list (item ID {item_id})."
 
 
-async def shopping_list_update(
-    client: GrocyClient, item_id: int, data: dict
-) -> str:
+async def shopping_list_update(client: GrocyClient, item_id: int, data: dict) -> str:
     """Update a shopping list item by its ID."""
     await client.update_shopping_list_item(item_id, data)
     return f"Shopping list item {item_id} updated."
 
 
-async def shopping_list_set_amount(
-    client: GrocyClient, item_id: int, amount: float
-) -> str:
+async def shopping_list_set_amount(client: GrocyClient, item_id: int, amount: float) -> str:
     """Set the amount for a shopping list item."""
     await client.update_shopping_list_item(item_id, {"amount": amount})
     return f"Shopping list item {item_id} amount set to {amount}."
 
 
-async def shopping_list_set_note(
-    client: GrocyClient, item_id: int, note: str
-) -> str:
+async def shopping_list_set_note(client: GrocyClient, item_id: int, note: str) -> str:
     """Set or update the note for a shopping list item."""
     await client.update_shopping_list_item(item_id, {"note": note})
     return f"Shopping list item {item_id} note set to '{note}'."

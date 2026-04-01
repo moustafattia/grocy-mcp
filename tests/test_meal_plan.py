@@ -2,7 +2,12 @@
 
 from unittest.mock import AsyncMock, patch
 
-from grocy_mcp.core.meal_plan import meal_plan_add, meal_plan_list, meal_plan_remove, meal_plan_shopping
+from grocy_mcp.core.meal_plan import (
+    meal_plan_add,
+    meal_plan_list,
+    meal_plan_remove,
+    meal_plan_shopping,
+)
 
 
 async def test_meal_plan_list():

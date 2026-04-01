@@ -142,7 +142,9 @@ class GrocyClient:
         items = await self.get_objects("shopping_list")
         return [i for i in items if i.get("shopping_list_id") == list_id]
 
-    async def add_shopping_list_item(self, product_id: int, amount: float = 1, shopping_list_id: int = 1, note: str | None = None) -> int:
+    async def add_shopping_list_item(
+        self, product_id: int, amount: float = 1, shopping_list_id: int = 1, note: str | None = None
+    ) -> int:
         data = {"product_id": product_id, "amount": amount, "shopping_list_id": shopping_list_id}
         if note:
             data["note"] = note
@@ -158,7 +160,9 @@ class GrocyClient:
         await self._request("POST", "/stock/shoppinglist/clear", json={"list_id": list_id})
 
     async def add_missing_products_to_shopping_list(self, list_id: int = 1) -> None:
-        await self._request("POST", "/stock/shoppinglist/add-missing-products", json={"list_id": list_id})
+        await self._request(
+            "POST", "/stock/shoppinglist/add-missing-products", json={"list_id": list_id}
+        )
 
     # --- Recipes ---
 
@@ -176,7 +180,9 @@ class GrocyClient:
         await self._request("POST", f"/recipes/{recipe_id}/consume")
 
     async def add_recipe_to_shopping_list(self, recipe_id: int) -> None:
-        await self._request("POST", f"/recipes/{recipe_id}/add-not-fulfilled-products-to-shoppinglist")
+        await self._request(
+            "POST", f"/recipes/{recipe_id}/add-not-fulfilled-products-to-shoppinglist"
+        )
 
     # --- Chores ---
 

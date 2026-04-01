@@ -59,7 +59,11 @@ async def recipe_fulfillment(client: GrocyClient, recipe: str) -> str:
     can_fulfill = not fulfillment.get("need_fulfillment", True)
     missing_count = fulfillment.get("missing_products_count", 0)
 
-    status = "can be fulfilled" if can_fulfill else f"cannot be fulfilled ({missing_count} missing product(s))"
+    status = (
+        "can be fulfilled"
+        if can_fulfill
+        else f"cannot be fulfilled ({missing_count} missing product(s))"
+    )
     return f"Recipe '{recipe_name}' fulfillment: {status}."
 
 
@@ -132,10 +136,7 @@ async def recipe_create(
             await client.create_object("recipes_pos", pos_data)
             ingredient_count += 1
 
-    return (
-        f"Recipe '{name}' created (ID {recipe_id}) "
-        f"with {ingredient_count} ingredient(s)."
-    )
+    return f"Recipe '{name}' created (ID {recipe_id}) with {ingredient_count} ingredient(s)."
 
 
 async def recipe_create_by_name(
@@ -165,10 +166,7 @@ async def recipe_create_by_name(
             await client.create_object("recipes_pos", pos_data)
             ingredient_count += 1
 
-    return (
-        f"Recipe '{name}' created (ID {recipe_id}) "
-        f"with {ingredient_count} ingredient(s)."
-    )
+    return f"Recipe '{name}' created (ID {recipe_id}) with {ingredient_count} ingredient(s)."
 
 
 async def recipe_update(

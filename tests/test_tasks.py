@@ -8,7 +8,13 @@ from grocy_mcp.core.tasks import task_complete, task_create, task_delete, tasks_
 async def test_tasks_list():
     client = AsyncMock()
     client.get_objects.return_value = [
-        {"id": 1, "name": "Buy groceries", "done": 0, "due_date": "2026-04-05", "category_id": None},
+        {
+            "id": 1,
+            "name": "Buy groceries",
+            "done": 0,
+            "due_date": "2026-04-05",
+            "category_id": None,
+        },
         {"id": 2, "name": "Call dentist", "done": 0, "due_date": None, "category_id": 3},
     ]
     result = await tasks_list(client)
@@ -65,7 +71,12 @@ async def test_task_create_with_all_options():
     )
     client.create_object.assert_called_once_with(
         "tasks",
-        {"name": "Fix door", "due_date": "2026-04-10", "assigned_to_user_id": 2, "description": "Squeaky"},
+        {
+            "name": "Fix door",
+            "due_date": "2026-04-10",
+            "assigned_to_user_id": 2,
+            "description": "Squeaky",
+        },
     )
     assert "'Fix door'" in result
 

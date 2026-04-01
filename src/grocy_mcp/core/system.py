@@ -9,7 +9,11 @@ async def system_info(client: GrocyClient) -> str:
     """Return Grocy system information."""
     info = await client.get_system_info()
     grocy_version = info.get("grocy_version", {})
-    version = grocy_version.get("Version", "unknown") if isinstance(grocy_version, dict) else str(grocy_version)
+    version = (
+        grocy_version.get("Version", "unknown")
+        if isinstance(grocy_version, dict)
+        else str(grocy_version)
+    )
     php_version = info.get("php_version", "unknown")
     sqlite_version = info.get("sqlite_version", "unknown")
 

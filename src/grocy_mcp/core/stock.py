@@ -66,11 +66,7 @@ async def stock_product_info(client: GrocyClient, product: str) -> str:
     amount = info.get("stock_amount", 0)
     best_before = info.get("next_best_before_date", "unknown")
 
-    return (
-        f"Product: {name}\n"
-        f"  In stock: {amount}\n"
-        f"  Next best before: {best_before}"
-    )
+    return f"Product: {name}\n  In stock: {amount}\n  Next best before: {best_before}"
 
 
 async def stock_add(client: GrocyClient, product: str, amount: float, **kwargs) -> str:
@@ -87,9 +83,7 @@ async def stock_consume(client: GrocyClient, product: str, amount: float, **kwar
     return f"Consumed {amount} of '{product}' from stock."
 
 
-async def stock_transfer(
-    client: GrocyClient, product: str, amount: float, to_location: str
-) -> str:
+async def stock_transfer(client: GrocyClient, product: str, amount: float, to_location: str) -> str:
     """Transfer stock to a different location."""
     product_id = await resolve_product(client, product)
     location_id = await resolve_location(client, to_location)
